@@ -1,3 +1,5 @@
+package io.horizontalsystems.hdwalletkit
+
 class HDWallet(private val seed: ByteArray, private val coinType: Int, val gapLimit: Int = 20) {
 
     enum class Chain {

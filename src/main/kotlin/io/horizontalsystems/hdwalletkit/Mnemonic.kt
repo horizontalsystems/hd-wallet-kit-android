@@ -1,9 +1,8 @@
-
+package io.horizontalsystems.hdwalletkit
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.security.SecureRandom
 import kotlin.experimental.and
-
 
 class Mnemonic {
 
@@ -32,7 +31,7 @@ class Mnemonic {
      */
     fun toMnemonic(entropy: ByteArray): List<String> {
         if (entropy.isEmpty())
-            throw Mnemonic.EmptyEntropyException("Entropy is empty.")
+            throw EmptyEntropyException("Entropy is empty.")
 
         // We take initial entropy of ENT bits and compute its
         // checksum by taking first ENT / 32 bits of its SHA256 hash.

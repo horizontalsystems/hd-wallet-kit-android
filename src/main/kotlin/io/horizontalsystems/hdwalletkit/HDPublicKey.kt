@@ -1,3 +1,5 @@
+package io.horizontalsystems.hdwalletkit
+
 class HDPublicKey() {
 
     var index = 0

@@ -1,3 +1,5 @@
+package io.horizontalsystems.hdwalletkit;
+
 /**
  * Copyright 2011 Google Inc.
  * Copyright 2013-2016 Ronald W Hoffman

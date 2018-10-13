@@ -1,3 +1,5 @@
+package io.horizontalsystems.hdwalletkit;
+
 /**
  * Copyright 2013-2014 Ronald W Hoffman
  * <p>
@@ -15,7 +17,7 @@
  */
 
 /**
- * An ECException is thrown if an error occurs in an elliptic curve cryptographic
+ * An io.horizontalsystems.hdwalletkit.ECException is thrown if an error occurs in an elliptic curve cryptographic
  * function
  */
 public class ECException extends Exception {

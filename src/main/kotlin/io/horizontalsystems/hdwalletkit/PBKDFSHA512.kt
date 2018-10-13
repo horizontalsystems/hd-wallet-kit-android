@@ -1,3 +1,5 @@
+package io.horizontalsystems.hdwalletkit
+
 /*
  * Copyright (c) 2012 Cole Barnes [cryptofreek{at}gmail{dot}com]
  *

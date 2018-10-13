@@ -1,3 +1,5 @@
+package io.horizontalsystems.hdwalletkit;
+
 /**
  * Copyright 2013-2014 Ronald W Hoffman
  * <p>
@@ -25,7 +27,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 /**
- * ECDSASignature is an elliptic curve digital signature consisting of the
+ * io.horizontalsystems.hdwalletkit.ECDSASignature is an elliptic curve digital signature consisting of the
  * R and S values.
  */
 public class ECDSASignature {

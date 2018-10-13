@@ -1,3 +1,5 @@
+package io.horizontalsystems.hdwalletkit;
+
 /*
  * Copyright 2016 Ronald W Hoffman.
  *

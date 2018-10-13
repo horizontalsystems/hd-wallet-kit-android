@@ -1,3 +1,4 @@
+package io.horizontalsystems.hdwalletkit;
 
 public class HDDerivationException extends Exception {
 

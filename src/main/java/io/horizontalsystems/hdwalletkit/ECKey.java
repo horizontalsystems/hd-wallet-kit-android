@@ -1,3 +1,5 @@
+package io.horizontalsystems.hdwalletkit;
+
 /**
  * Copyright 2011 Google Inc.
  * Copyright 2013-2016 Ronald W Hoffman
@@ -35,7 +37,7 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 
 /**
- * ECKey supports elliptic curve cryptographic operations using a public/private
+ * io.horizontalsystems.hdwalletkit.ECKey supports elliptic curve cryptographic operations using a public/private
  * key pair.  A private key is required to create a signature and a public key is
  * required to verify a signature.  The private key is always encrypted using AES
  * when it is serialized for storage on external media.
@@ -84,7 +86,7 @@ public class ECKey {
     private boolean isChange;
 
     /**
-     * Creates an ECKey with a new public/private key pair.  Point compression is used
+     * Creates an io.horizontalsystems.hdwalletkit.ECKey with a new public/private key pair.  Point compression is used
      * so the resulting public key will be 33 bytes (32 bytes for the x-coordinate and
      * 1 byte to represent the y-coordinate sign)
      */
@@ -102,7 +104,7 @@ public class ECKey {
     }
 
     /**
-     * Creates an ECKey with just a public key
+     * Creates an io.horizontalsystems.hdwalletkit.ECKey with just a public key
      *
      * @param       pubKey              Public key
      */
@@ -111,7 +113,7 @@ public class ECKey {
     }
 
     /**
-     * Creates an ECKey public/private key pair using the supplied private key.  The
+     * Creates an io.horizontalsystems.hdwalletkit.ECKey public/private key pair using the supplied private key.  The
      * 'compressed' parameter determines the type of public key created.
      *
      * @param       privKey             Private key
@@ -122,8 +124,8 @@ public class ECKey {
     }
 
     /**
-     * Creates an ECKey with the supplied public/private key pair.  The private key may be
-     * null if you only want to use this ECKey to verify signatures.  The public key will
+     * Creates an io.horizontalsystems.hdwalletkit.ECKey with the supplied public/private key pair.  The private key may be
+     * null if you only want to use this io.horizontalsystems.hdwalletkit.ECKey to verify signatures.  The public key will
      * be generated from the private key if it is not provided (the 'compressed' parameter
      * determines the type of public key created)
      *

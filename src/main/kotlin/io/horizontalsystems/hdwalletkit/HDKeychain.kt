@@ -1,3 +1,5 @@
+package io.horizontalsystems.hdwalletkit
+
 class HDKeychain(seed: ByteArray) {
 
     private var privateKey: HDKey = HDKeyDerivation.createRootKey(seed)
