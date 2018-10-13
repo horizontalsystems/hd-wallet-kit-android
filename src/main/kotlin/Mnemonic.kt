@@ -1,5 +1,4 @@
 
-import bitcoin.wallet.kit.hdwallet.utils.PBKDF2SHA512
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.security.SecureRandom
