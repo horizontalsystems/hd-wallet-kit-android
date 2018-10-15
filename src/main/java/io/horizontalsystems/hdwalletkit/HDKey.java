@@ -70,13 +70,13 @@ public class HDKey extends ECKey {
      * @param childNumber Child number (first child is 0)
      * @param isHardened  TRUE if the child is hardened
      */
-    public HDKey(BigInteger privKey, byte[] chainCode, HDKey parent, int childNumber, boolean isHardened) {
-        super(privKey, true);
+    public HDKey(BigInteger privKey, byte[] chainCode, HDKey parent, int childNumber, boolean isHardened, boolean compressed) {
+        super(privKey, compressed);
         if (getPrivKeyBytes().length > 33)
             throw new IllegalArgumentException("Private key is longer than 33 bytes");
         if (chainCode.length != 32)
             throw new IllegalArgumentException("Chain code is not 32 bytes");
-        if (getPubKey().length != 33)
+        if (compressed && getPubKey().length != 33)
             throw new IllegalStateException("Public key is not compressed");
         this.chainCode = Arrays.copyOfRange(chainCode, 0, chainCode.length);
         this.parent = parent;
@@ -228,12 +228,14 @@ public class HDKey extends ECKey {
      */
     @Override
     public String toString() {
-        List<Integer> path = getPath();
         StringBuilder sb = new StringBuilder();
-        sb.append("m");
-        for (Integer in : path) {
-            sb.append("/").append(in.toString());
+        if (parent != null) {
+            String parentPath = parent.toString();
+            sb.append(parentPath).append("/").append(childNumber).append(isHardened ? "'" : "");
+            return sb.toString();
+        } else {
+            return "m";
         }
-        return sb.toString();
     }
+
 }

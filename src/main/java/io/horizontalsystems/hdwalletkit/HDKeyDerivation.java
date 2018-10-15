@@ -1,21 +1,5 @@
 package io.horizontalsystems.hdwalletkit;
 
-/*
- * Copyright 2016 Ronald W Hoffman.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import org.spongycastle.math.ec.ECPoint;
 
 import java.math.BigInteger;
@@ -25,16 +9,17 @@ import java.util.Arrays;
 /**
  * Hierarchical Deterministic key derivation (BIP 32)
  */
+
 public class HDKeyDerivation {
 
     /**
      * Generate a root key from the given seed.  The seed must be at least 128 bits.
      *
-     * @param seed          HD seed
+     * @param seed HD seed
      * @return Root key
      * @throws HDDerivationException Generated master key is invalid
      */
-    public static HDKey createRootKey(byte[] seed) throws HDDerivationException {
+    public static HDKey createRootKey(byte[] seed, boolean compressed) throws HDDerivationException {
         if (seed.length < 16)
             throw new IllegalArgumentException("Seed must be at least 128 bits");
         //
@@ -53,7 +38,7 @@ public class HDKeyDerivation {
             throw new HDDerivationException("Generated master private key is zero");
         if (privKey.compareTo(ECKey.ecParams.getN()) >= 0)
             throw new HDDerivationException("Generated master private key is not less than N");
-        return new HDKey(privKey, ir, null, 0, false);
+        return new HDKey(privKey, ir, null, 0, false, compressed);
     }
 
     /**
@@ -74,7 +59,7 @@ public class HDKeyDerivation {
      * @return Derived key
      * @throws HDDerivationException Unable to derive key
      */
-    public static HDKey deriveChildKey(HDKey parent, int childNumber, boolean hardened)
+    public static HDKey deriveChildKey(HDKey parent, int childNumber, boolean hardened, boolean compressed)
             throws HDDerivationException {
         HDKey derivedKey;
         if ((childNumber & HDKey.HARDENED_FLAG) != 0)
@@ -84,7 +69,7 @@ public class HDKeyDerivation {
                 throw new IllegalStateException("Hardened key requires parent private key");
             derivedKey = derivePublicKey(parent, childNumber);
         } else {
-            derivedKey = derivePrivateKey(parent, childNumber, hardened);
+            derivedKey = derivePrivateKey(parent, childNumber, hardened, compressed);
         }
         return derivedKey;
     }
@@ -95,10 +80,11 @@ public class HDKeyDerivation {
      * @param parent      Parent key
      * @param childNumber Child number
      * @param hardened    TRUE to create a hardened key
+     * @param compressed  TRUE to create a compressed public key
      * @return Derived key
      * @throws HDDerivationException Unable to derive key
      */
-    private static HDKey derivePrivateKey(HDKey parent, int childNumber, boolean hardened)
+    private static HDKey derivePrivateKey(HDKey parent, int childNumber, boolean hardened, boolean compressed)
             throws HDDerivationException {
         byte[] parentPubKey = parent.getPubKey();
         if (parentPubKey.length != 33)
@@ -133,7 +119,7 @@ public class HDKeyDerivation {
         BigInteger ki = parent.getPrivKey().add(ilInt).mod(ECKey.ecParams.getN());
         if (ki.signum() == 0)
             throw new HDDerivationException("Derived private key is zero");
-        return new HDKey(ki, ir, parent, childNumber, hardened);
+        return new HDKey(ki, ir, parent, childNumber, hardened, compressed);
     }
 
     /**

@@ -1,8 +1,8 @@
 package io.horizontalsystems.hdwalletkit
 
-class HDKeychain(seed: ByteArray) {
+class HDKeychain(seed: ByteArray, private val compressed: Boolean = true) {
 
-    private var privateKey: HDKey = HDKeyDerivation.createRootKey(seed)
+    private var privateKey: HDKey = HDKeyDerivation.createRootKey(seed, compressed)
 
     /// Parses the BIP32 path and derives the chain of keychains accordingly.
     /// Path syntax: (m?/)?([0-9]+'?(/[0-9]+'?)*)?
@@ -41,7 +41,7 @@ class HDKeychain(seed: ByteArray) {
                 indexText = indexText.dropLast(1)
             }
             val index = indexText.toInt()
-            key = HDKeyDerivation.deriveChildKey(key, index, hardened)
+            key = HDKeyDerivation.deriveChildKey(key, index, hardened, compressed)
         }
 
         return key
