@@ -1,12 +1,12 @@
 package io.horizontalsystems.hdwalletkit
 
-class HDWallet(private val seed: ByteArray, private val coinType: Int, val gapLimit: Int = 20, private val compressed: Boolean = true) {
+class HDWallet(private val seed: ByteArray, private val coinType: Int, val gapLimit: Int = 20) {
 
     enum class Chain {
         EXTERNAL, INTERNAL
     }
 
-    private var hdKeychain: HDKeychain = HDKeychain(seed, compressed)
+    private var hdKeychain: HDKeychain = HDKeychain(seed)
 
 
     // m / purpose' / coin_type' / account' / change / address_index
