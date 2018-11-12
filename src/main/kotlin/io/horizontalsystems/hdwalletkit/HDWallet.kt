@@ -1,13 +1,12 @@
 package io.horizontalsystems.hdwalletkit
 
-class HDWallet(private val seed: ByteArray, private val coinType: Int, val gapLimit: Int = 20) {
+class HDWallet(seed: ByteArray, private val coinType: Int, val gapLimit: Int = 20) {
 
     enum class Chain {
         EXTERNAL, INTERNAL
     }
 
     private var hdKeychain: HDKeychain = HDKeychain(seed)
-
 
     // m / purpose' / coin_type' / account' / change / address_index
     //
@@ -32,7 +31,6 @@ class HDWallet(private val seed: ByteArray, private val coinType: Int, val gapLi
     // Software needs to discover all used accounts after importing the seed from an external source. Such an algorithm is described in "Account discovery" chapter.
     private var account: Int = 0
 
-
     fun hdPublicKey(index: Int, external: Boolean): HDPublicKey {
         return HDPublicKey(index = index, external = external, key = privateKey(index = index, chain = if (external) 0 else 1))
     }
@@ -47,6 +45,10 @@ class HDWallet(private val seed: ByteArray, private val coinType: Int, val gapLi
 
     fun privateKey(index: Int, chain: Int): HDKey {
         return privateKey(path = "m/$purpose'/$coinType'/$account'/$chain/$index")
+    }
+
+    fun privateKey(index: Int, external: Boolean): HDKey {
+        return privateKey(index, if (external) Chain.EXTERNAL.ordinal else Chain.INTERNAL.ordinal)
     }
 
     private fun privateKey(path: String): HDKey {
