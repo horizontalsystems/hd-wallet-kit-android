@@ -23,32 +23,24 @@ class HDWallet(seed: ByteArray, private val coinType: Int, val gapLimit: Int = 2
     // network.name == MainNet().name ? 0 : 1
     // private var coinType: Int = 0
 
-    // This level splits the key space into independent user identities, so the wallet never mixes the coins across different accounts.
-    // Users can use these accounts to organize the funds in the same fashion as bank accounts; for donation purposes (where all addresses are considered public), for saving purposes, for common expenses etc.
-    // Accounts are numbered from index 0 in sequentially increasing manner. This number is used as child index in BIP32 derivation.
-    // Hardened derivation is used at this level.
-    // Software should prevent a creation of an account if a previous account does not have a transaction history (meaning none of its addresses have been used before).
-    // Software needs to discover all used accounts after importing the seed from an external source. Such an algorithm is described in "Account discovery" chapter.
-    private var account: Int = 0
-
-    fun hdPublicKey(index: Int, external: Boolean): HDPublicKey {
-        return HDPublicKey(index = index, external = external, key = privateKey(index = index, chain = if (external) 0 else 1))
+    fun hdPublicKey(account: Int, index: Int, external: Boolean): HDPublicKey {
+        return HDPublicKey(index = index, external = external, key = privateKey(account = account, index = index, chain = if (external) 0 else 1))
     }
 
-    fun receiveHDPublicKey(index: Int): HDPublicKey {
-        return HDPublicKey(index = index, external = true, key = privateKey(index = index, chain = 0))
+    fun receiveHDPublicKey(account: Int, index: Int): HDPublicKey {
+        return HDPublicKey(index = index, external = true, key = privateKey(account = account, index = index, chain = 0))
     }
 
-    fun changeHDPublicKey(index: Int): HDPublicKey {
-        return HDPublicKey(index = index, external = false, key = privateKey(index = index, chain = 1))
+    fun changeHDPublicKey(account: Int, index: Int): HDPublicKey {
+        return HDPublicKey(index = index, external = false, key = privateKey(account = account, index = index, chain = 1))
     }
 
-    fun privateKey(index: Int, chain: Int): HDKey {
+    fun privateKey(account: Int, index: Int, chain: Int): HDKey {
         return privateKey(path = "m/$purpose'/$coinType'/$account'/$chain/$index")
     }
 
-    fun privateKey(index: Int, external: Boolean): HDKey {
-        return privateKey(index, if (external) Chain.EXTERNAL.ordinal else Chain.INTERNAL.ordinal)
+    fun privateKey(account: Int,index: Int, external: Boolean): HDKey {
+        return privateKey(account, index, if (external) Chain.EXTERNAL.ordinal else Chain.INTERNAL.ordinal)
     }
 
     private fun privateKey(path: String): HDKey {
