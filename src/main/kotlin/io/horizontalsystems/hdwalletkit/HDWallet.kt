@@ -1,19 +1,25 @@
 package io.horizontalsystems.hdwalletkit
 
-class HDWallet(seed: ByteArray, private val coinType: Int, val gapLimit: Int = 20) {
+class HDWallet(seed: ByteArray, private val coinType: Int, val gapLimit: Int = 20, purpose: Purpose = Purpose.BIP44) {
 
     enum class Chain {
         EXTERNAL, INTERNAL
     }
 
-    private var hdKeychain: HDKeychain = HDKeychain(seed)
+    enum class Purpose(val value: Int) {
+        BIP44(44),
+        BIP49(49),
+        BIP84(84)
+    }
+
+    private val hdKeychain: HDKeychain = HDKeychain(seed)
 
     // m / purpose' / coin_type' / account' / change / address_index
     //
     // Purpose is a constant set to 44' (or 0x8000002C) following the BIP43 recommendation.
     // It indicates that the subtree of this node is used according to this specification.
     // Hardened derivation is used at this level.
-    private var purpose: Int = 44
+    private val purpose: Int = purpose.value
 
     // One master node (seed) can be used for unlimited number of independent cryptocoins such as Bitcoin, Litecoin or Namecoin. However, sharing the same space for various cryptocoins has some disadvantages.
     // This level creates a separate subtree for every cryptocoin, avoiding reusing addresses across cryptocoins and improving privacy issues.
@@ -39,7 +45,7 @@ class HDWallet(seed: ByteArray, private val coinType: Int, val gapLimit: Int = 2
         return privateKey(path = "m/$purpose'/$coinType'/$account'/$chain/$index")
     }
 
-    fun privateKey(account: Int,index: Int, external: Boolean): HDKey {
+    fun privateKey(account: Int, index: Int, external: Boolean): HDKey {
         return privateKey(account, index, if (external) Chain.EXTERNAL.ordinal else Chain.INTERNAL.ordinal)
     }
 
