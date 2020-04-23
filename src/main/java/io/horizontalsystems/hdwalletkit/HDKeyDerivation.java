@@ -16,7 +16,7 @@ package io.horizontalsystems.hdwalletkit;
  * limitations under the License.
  */
 
-import org.spongycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.ECPoint;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;

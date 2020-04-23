@@ -28,7 +28,7 @@ class HDKeychainTest {
     @Throws(Exception::class)
     fun getPrivateKeyByPath_invalidPath() {
         val path32 = "m/0/b"
-        val hdKey = hdKeyManager.getKeyByPath(path32)
+        hdKeyManager.getKeyByPath(path32)
     }
 
 }

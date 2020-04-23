@@ -16,10 +16,10 @@ package io.horizontalsystems.hdwalletkit;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import org.spongycastle.crypto.digests.RIPEMD160Digest;
-import org.spongycastle.crypto.digests.SHA512Digest;
-import org.spongycastle.crypto.macs.HMac;
-import org.spongycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.digests.RIPEMD160Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.params.KeyParameter;
 
 import java.io.IOException;
 import java.io.InputStream;
