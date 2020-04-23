@@ -1,6 +1,5 @@
-import io.horizontalsystems.hdwalletkit.ECKey
-import io.horizontalsystems.hdwalletkit.hexStringToByteArray
-import io.horizontalsystems.hdwalletkit.toHexString
+package io.horizontalsystems.hdwalletkit
+
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test

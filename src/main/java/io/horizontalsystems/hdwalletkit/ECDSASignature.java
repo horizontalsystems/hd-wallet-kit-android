@@ -17,10 +17,10 @@ package io.horizontalsystems.hdwalletkit;
  */
 
 
-import org.spongycastle.asn1.ASN1InputStream;
-import org.spongycastle.asn1.ASN1Integer;
-import org.spongycastle.asn1.DERSequenceGenerator;
-import org.spongycastle.asn1.DLSequence;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.DERSequenceGenerator;
+import org.bouncycastle.asn1.DLSequence;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
