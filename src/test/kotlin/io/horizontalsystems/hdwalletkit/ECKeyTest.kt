@@ -21,13 +21,22 @@ class ECKeyTest {
 
     @Test
     fun createSignature_Success() {
-
         ecKey = ECKey(publicKey, privateKey, true)
 
         val expectedSignatureHex = "304402201d914e9d229e4b8cbb7c8dee96f4fdd835cabae7e016e0859c5dc95977b697d50220681395971eecd5df3eb36b8f97f0c8b1a6e98dc7d5662f921e0b2fb0694db0f2"
         val resultSignature = ecKey.createSignature(dataToSign)
 
         Assert.assertEquals(expectedSignatureHex, resultSignature.toHexString())
+    }
+
+    @Test
+    fun signMessage() {
+        ecKey = ECKey(publicKey, privateKey, true)
+        // address(P2PKH): 1Ms9Sv1ebeBnoQCSxmwwichbQEaZ5KfXA7
+        val resultSignature = ecKey.signMessage("abc")
+        val expectedSignature = "H5P92Zr8CMBawZmIBknEKYwtiND3f7m4nloz6inU5Yg1NHd3QsZnLGAFi0sn+leQZKYi8dgakcpSsBM3VUOf9lI="
+
+        Assert.assertEquals(expectedSignature, resultSignature)
     }
 
     @Test(expected = IllegalStateException::class)

@@ -28,11 +28,16 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
+import org.bouncycastle.util.encoders.Base64;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
@@ -344,7 +349,14 @@ public class ECKey {
         return isCompressed;
     }
 
-    public byte[] createSignature(byte[] contents) throws ECException {
+    /**
+     * Creates a signature for the supplied contents using the private key
+     *
+     * @param       contents                Contents to be signed
+     * @return                              ECDSA signature
+     * @throws      ECException             Unable to create signature
+     */
+    public ECDSASignature createECDSASignature(byte[] contents) throws ECException {
         if (privKey == null)
             throw new IllegalStateException("No private key available");
         //
@@ -369,7 +381,141 @@ public class ECKey {
         //
         if (sigs[1].compareTo(HALF_CURVE_ORDER) > 0)
             sigs[1] = ecParams.getN().subtract(sigs[1]);
-        return new ECDSASignature(sigs[0], sigs[1]).encodeToDER();
+
+        return new ECDSASignature(sigs[0], sigs[1]);
+    }
+
+    public byte[] createSignature(byte[] contents) throws ECException {
+        return createECDSASignature(contents).encodeToDER();
+    }
+
+    /**
+     * Signs a message using the private key
+     *
+     * @param       message             Message to be signed
+     * @return                          Base64-encoded signature string
+     * @throws      ECException         Unable to sign the message
+     */
+    public String signMessage(String message) throws ECException {
+        String encodedSignature;
+        if (privKey == null)
+            throw new IllegalStateException("No private key available");
+        try {
+            //
+            // Format the message for signing
+            //
+            byte[] contents;
+            try (ByteArrayOutputStream outStream = new ByteArrayOutputStream(message.length()*2)) {
+                byte[] headerBytes = BITCOIN_SIGNED_MESSAGE_HEADER.getBytes(StandardCharsets.UTF_8);
+                outStream.write(Utils.encode(headerBytes.length));
+                outStream.write(headerBytes);
+                byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
+                outStream.write(Utils.encode(messageBytes.length));
+                outStream.write(messageBytes);
+                contents = outStream.toByteArray();
+            }
+            //
+            // Create the signature
+            //
+            ECDSASignature sig = createECDSASignature(contents);
+            //
+            // Get the RecID used to recover the public key from the signature
+            //
+            BigInteger e = new BigInteger(1, Utils.doubleDigest(contents));
+            int recID = -1;
+            for (int i=0; i<4; i++) {
+                ECKey k = recoverFromSignature(i, sig, e, isCompressed());
+                if (k != null && Arrays.equals(k.getPubKey(), pubKey)) {
+                    recID = i;
+                    break;
+                }
+            }
+            if (recID == -1)
+                throw new ECException("Unable to recover public key from signature");
+            //
+            // The message signature consists of a header byte followed by the R and S values
+            //
+            int headerByte = recID + 27 + (isCompressed() ? 4 : 0);
+            byte[] sigData = new byte[65];
+            sigData[0] = (byte)headerByte;
+            System.arraycopy(Utils.bigIntegerToBytes(sig.getR(), 32), 0, sigData, 1, 32);
+            System.arraycopy(Utils.bigIntegerToBytes(sig.getS(), 32), 0, sigData, 33, 32);
+            //
+            // Create a Base-64 encoded string for the message signature
+            //
+            encodedSignature = new String(Base64.encode(sigData), StandardCharsets.UTF_8);
+        } catch (IOException exc) {
+            throw new IllegalStateException("Unexpected IOException", exc);
+        }
+
+        return encodedSignature;
+    }
+
+    /**
+     * <p>Given the components of a signature and a selector value, recover and return the public key
+     * that generated the signature according to the algorithm in SEC1v2 section 4.1.6.</p>
+     *
+     * <p>The recID is an index from 0 to 3 which indicates which of the 4 possible keys is the correct one.
+     * Because the key recovery operation yields multiple potential keys, the correct key must either be
+     * stored alongside the signature, or you must be willing to try each recId in turn until you find one
+     * that outputs the key you are expecting.</p>
+     *
+     * <p>If this method returns null, it means recovery was not possible and recID should be iterated.</p>
+     *
+     * <p>Given the above two points, a correct usage of this method is inside a for loop from 0 to 3, and if the
+     * output is null OR a key that is not the one you expect, you try again with the next recID.</p>
+     *
+     * @param       recID               Which possible key to recover.
+     * @param       sig                 R and S components of the signature
+     * @param       e                   The double SHA-256 hash of the original message
+     * @param       compressed          Whether or not the original public key was compressed
+     * @return      An ECKey containing only the public part, or null if recovery wasn't possible
+     */
+    private static ECKey recoverFromSignature(int recID, ECDSASignature sig, BigInteger e, boolean compressed) {
+        BigInteger n = ecParams.getN();
+        BigInteger i = BigInteger.valueOf((long)recID / 2);
+        BigInteger x = sig.getR().add(i.multiply(n));
+        //
+        //   Convert the integer x to an octet string X of length mlen using the conversion routine
+        //        specified in Section 2.3.7, where mlen = ⌈(log2 p)/8⌉ or mlen = ⌈m/8⌉.
+        //   Convert the octet string (16 set binary digits)||X to an elliptic curve point R using the
+        //        conversion routine specified in Section 2.3.4. If this conversion routine outputs 'invalid', then
+        //        do another iteration.
+        //
+        // More concisely, what these points mean is to use X as a compressed public key.
+        //
+        SecP256K1Curve curve = (SecP256K1Curve)ecParams.getCurve();
+        BigInteger prime = curve.getQ();
+        if (x.compareTo(prime) >= 0) {
+            return null;
+        }
+        //
+        // Compressed keys require you to know an extra bit of data about the y-coordinate as
+        // there are two possibilities.  So it's encoded in the recID.
+        //
+        ECPoint R = decompressKey(x, (recID & 1) == 1);
+        if (!R.multiply(n).isInfinity())
+            return null;
+        //
+        //   For k from 1 to 2 do the following.   (loop is outside this function via iterating recId)
+        //     Compute a candidate public key as:
+        //       Q = mi(r) * (sR - eG)
+        //
+        // Where mi(x) is the modular multiplicative inverse. We transform this into the following:
+        //               Q = (mi(r) * s ** R) + (mi(r) * -e ** G)
+        // Where -e is the modular additive inverse of e, that is z such that z + e = 0 (mod n).
+        // In the above equation, ** is point multiplication and + is point addition (the EC group operator).
+        //
+        // We can find the additive inverse by subtracting e from zero then taking the mod. For example the additive
+        // inverse of 3 modulo 11 is 8 because 3 + 8 mod 11 = 0, and -3 mod 11 = 8.
+        //
+        BigInteger eInv = BigInteger.ZERO.subtract(e).mod(n);
+        BigInteger rInv = sig.getR().modInverse(n);
+        BigInteger srInv = rInv.multiply(sig.getS()).mod(n);
+        BigInteger eInvrInv = rInv.multiply(eInv).mod(n);
+        ECPoint q = ECAlgorithms.sumOfTwoMultiplies(ecParams.getG(), eInvrInv, R, srInv);
+
+        return new ECKey(q.getEncoded(compressed));
     }
 
     /**
