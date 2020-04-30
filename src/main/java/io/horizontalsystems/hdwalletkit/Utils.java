@@ -23,6 +23,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -190,6 +191,87 @@ public class Utils {
         } catch (IOException x) {
             throw new RuntimeException(x);
         }
+    }
+
+    /**
+     * Write an unsigned 32-bit value to a byte array in little-endian format
+     *
+     * @param       val             Value to be written
+     * @param       out             Output array
+     * @param       offset          Starting offset
+     */
+    public static void uint32ToByteArrayLE(long val, byte[] out, int offset) {
+        out[offset++] = (byte)val;
+        out[offset++] = (byte)(val >> 8);
+        out[offset++] = (byte)(val >> 16);
+        out[offset] = (byte)(val >> 24);
+    }
+
+    /**
+     * Write an unsigned 64-bit value to a byte array in little-endian format
+     *
+     * @param       val             Value to be written
+     * @param       out             Output array
+     * @param       offset          Starting offset
+     */
+    public static void uint64ToByteArrayLE(long val, byte[] out, int offset) {
+        out[offset++] = (byte)val;
+        out[offset++] = (byte)(val >> 8);
+        out[offset++] = (byte)(val >> 16);
+        out[offset++] = (byte)(val >> 24);
+        out[offset++] = (byte)(val >> 32);
+        out[offset++] = (byte)(val >> 40);
+        out[offset++] = (byte)(val >> 48);
+        out[offset] = (byte)(val >> 56);
+    }
+
+    /**
+     * Converts a BigInteger to a fixed-length byte array.
+     *
+     * The regular BigInteger method isn't quite what we often need: it appends a
+     * leading zero to indicate that the number is positive and it may need padding.
+     *
+     * @param       bigInteger          Integer to format into a byte array
+     * @param       numBytes            Desired size of the resulting byte array
+     * @return                          Byte array of the desired length
+     */
+    public static byte[] bigIntegerToBytes(BigInteger bigInteger, int numBytes) {
+        if (bigInteger == null)
+            return null;
+        byte[] bigBytes = bigInteger.toByteArray();
+        byte[] bytes = new byte[numBytes];
+        int start = (bigBytes.length==numBytes+1) ? 1 : 0;
+        int length = Math.min(bigBytes.length, numBytes);
+        System.arraycopy(bigBytes, start, bytes, numBytes-length, length);
+        return bytes;
+    }
+
+    /**
+     * Encode the value in little-endian format
+     *
+     * @param       value           Value to encode
+     * @return Byte array
+     */
+    public static byte[] encode(long value) {
+        byte[] bytes;
+        if ((value & 0xFFFFFFFF00000000L) != 0) {
+            // 1 marker + 8 data bytes
+            bytes = new byte[9];
+            bytes[0] = (byte) 255;
+            Utils.uint64ToByteArrayLE(value, bytes, 1);
+        } else if ((value & 0x00000000FFFF0000L) != 0) {
+            // 1 marker + 4 data bytes
+            bytes = new byte[5];
+            bytes[0] = (byte) 254;
+            Utils.uint32ToByteArrayLE(value, bytes, 1);
+        } else if (value >= 253L) {
+            // 1 marker + 2 data bytes
+            bytes = new byte[]{(byte) 253, (byte) value, (byte) (value >> 8)};
+        } else {
+            // Single data byte
+            bytes = new byte[]{(byte) value};
+        }
+        return bytes;
     }
 
     public static byte[] intToByteArray(int value) {
