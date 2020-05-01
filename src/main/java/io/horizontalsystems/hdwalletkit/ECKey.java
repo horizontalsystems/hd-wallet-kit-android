@@ -452,6 +452,50 @@ public class ECKey {
     }
 
     /**
+     * Verifies a signature for the signed contents using the public key
+     *
+     * @param       contents            The signed contents
+     * @param       signature           DER-encoded signature
+     * @return                          TRUE if the signature if valid, FALSE otherwise
+     * @throws      ECException         Unable to verify the signature
+     */
+    public boolean verifySignature(byte[] contents, byte[] signature) throws ECException {
+        boolean isValid = false;
+        //
+        // Decode the DER-encoded signature and get the R and S values
+        //
+        ECDSASignature sig = new ECDSASignature(signature);
+        //
+        // Get the double SHA-256 hash of the signed contents
+        //
+        // A null contents will result in a hash with the first byte set to 1 and
+        // all other bytes set to 0.  This is needed to handle a bug in the reference
+        // client where it doesn't check for an error when serializing a transaction
+        // and instead uses the error code as the hash.
+        //
+        byte[] contentsHash;
+        if (contents != null) {
+            contentsHash = Utils.doubleDigest(contents);
+        } else {
+            contentsHash = new byte[32];
+            contentsHash[0] = 0x01;
+        }
+        //
+        // Verify the signature
+        //
+        try {
+            ECDSASigner signer = new ECDSASigner();
+            ECPublicKeyParameters params = new ECPublicKeyParameters(
+                    ecParams.getCurve().decodePoint(pubKey), ecParams);
+            signer.init(false, params);
+            isValid = signer.verifySignature(contentsHash, sig.getR(), sig.getS());
+        } catch (RuntimeException exc) {
+            throw new ECException("Exception while verifying signature: "+exc.getMessage());
+        }
+        return isValid;
+    }
+
+    /**
      * <p>Given the components of a signature and a selector value, recover and return the public key
      * that generated the signature according to the algorithm in SEC1v2 section 4.1.6.</p>
      *
