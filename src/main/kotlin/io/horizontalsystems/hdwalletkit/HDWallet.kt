@@ -33,6 +33,15 @@ class HDWallet(seed: ByteArray, private val coinType: Int, val gapLimit: Int = 2
         return HDPublicKey(index = index, external = external, key = privateKey(account = account, index = index, chain = if (external) 0 else 1))
     }
 
+    fun hdPublicKeys(account: Int, indices: IntRange, external: Boolean): List<HDPublicKey> {
+        val parentPrivateKey = privateKey("m/$purpose'/$coinType'/$account'/${if (external) 0 else 1}")
+        return hdKeychain
+                .deriveNonHardenedChildKeys(parentPrivateKey, indices)
+                .map {
+                    HDPublicKey(it.childNumber, external, it)
+                }
+    }
+
     fun receiveHDPublicKey(account: Int, index: Int): HDPublicKey {
         return HDPublicKey(index = index, external = true, key = privateKey(account = account, index = index, chain = 0))
     }

@@ -45,4 +45,22 @@ class HDWalletTest {
 
         assertArrayEquals(hdKey1.chainCode, hdKey2.chainCode)
     }
+
+    @Test
+    fun testBatchPublicKeysGeneration() {
+        val publicKeys = mutableListOf<HDPublicKey>()
+
+        for (i in 0 until 10) {
+            publicKeys.add(hdWalletMainNet.hdPublicKey(0, i, true))
+        }
+
+        val batchPublicKeys = hdWalletMainNet.hdPublicKeys(0, 0 until 10, true)
+
+        assert(publicKeys.size == batchPublicKeys.size)
+
+        publicKeys.forEachIndexed { index, pubKey ->
+            assertArrayEquals(pubKey.publicKey, batchPublicKeys[index].publicKey)
+        }
+    }
+
 }
