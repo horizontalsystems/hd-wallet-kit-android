@@ -47,4 +47,13 @@ class HDKeychain(seed: ByteArray, private val compressed: Boolean = true) {
         return key
     }
 
+    fun deriveNonHardenedChildKeys(parentPrivateKey: HDKey, indices: IntRange): List<HDKey> {
+        val keys = mutableListOf<HDKey>()
+        for (index in indices) {
+            val childHDKey = HDKeyDerivation.deriveChildKey(parentPrivateKey, index, false)
+            keys.add(childHDKey)
+        }
+        return keys
+    }
+
 }
