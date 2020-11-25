@@ -3,6 +3,7 @@ import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.security.SecureRandom
 import kotlin.experimental.and
+import kotlin.experimental.or
 
 class Mnemonic {
 
@@ -106,6 +107,71 @@ class Mnemonic {
                 throw InvalidMnemonicKeyException("Invalid word: $mnemonic")
         }
 
+        validateChecksum(mnemonicKeys)
+    }
+
+    /**
+     * Convenience method for validating the checksum of this MnemonicCode. Since validation
+     * requires deriving the original entropy, this function is the same as calling [toEntropy].
+     */
+    fun validateChecksum(mnemonicKeys: List<String>) = toEntropy(mnemonicKeys)
+
+    /**
+     * Get the original entropy that was used to create this MnemonicCode. This call will fail
+     * if the words have an invalid length or checksum.
+     *
+     * @throws InvalidMnemonicCountException when the word count is zero or not a multiple of 3.
+     * @throws ChecksumException if the checksum does not match the expected value.
+     *
+     * source: https://github.com/zcash/kotlin-bip39/blob/master/lib/src/main/java/cash/z/ecc/android/bip39/Mnemonics.kt
+     */
+    fun toEntropy(mnemonicKeys: List<String>): ByteArray {
+        mnemonicKeys.size.let { if (it <= 0 || it % 3 > 0) throw InvalidMnemonicCountException("Count: ${mnemonicKeys.size}") }
+
+        // Look up all the words in the list and construct the
+        // concatenation of the original entropy and the checksum.
+        //
+        val totalLengthBits = mnemonicKeys.size * 11
+        val checksumLengthBits = totalLengthBits / 33
+        val entropy = ByteArray((totalLengthBits - checksumLengthBits) / 8)
+        val checksumBits = mutableListOf<Boolean>()
+
+        val words = WordList.getWords()
+        var bitsProcessed = 0
+        var nextByte = 0.toByte()
+        mnemonicKeys.forEach {
+            words.binarySearch(it).let { phraseIndex ->
+                // fail if the word was not found on the list
+                if (phraseIndex < 0) throw InvalidMnemonicKeyException("Invalid word: $it")
+                // for each of the 11 bits of the phraseIndex
+                (10 downTo 0).forEach { i ->
+                    // isolate the next bit (starting from the big end)
+                    val bit = phraseIndex and (1 shl i) != 0
+                    // if the bit is set, then update the corresponding bit in the nextByte
+                    if (bit) nextByte = nextByte or (1 shl 7 - (bitsProcessed).rem(8)).toByte()
+                    val entropyIndex = ((++bitsProcessed) - 1) / 8
+                    // if we're at a byte boundary (excluding the extra checksum bits)
+                    if (bitsProcessed.rem(8) == 0 && entropyIndex < entropy.size) {
+                        // then set the byte and prepare to process the next byte
+                        entropy[entropyIndex] = nextByte
+                        nextByte = 0.toByte()
+                        // if we're now processing checksum bits, then track them for later
+                    } else if (entropyIndex >= entropy.size) {
+                        checksumBits.add(bit)
+                    }
+                }
+            }
+        }
+
+        // Check each required checksum bit, against the first byte of the sha256 of entropy
+        entropy.toSha256()[0].toBits().let { hashFirstByteBits ->
+            repeat(checksumLengthBits) { i ->
+                // failure means that each word was valid BUT they were in the wrong order
+                if (hashFirstByteBits[i] != checksumBits[i]) throw ChecksumException("Invalid checksum")
+            }
+        }
+
+        return entropy
     }
 
     private fun bytesToBits(data: ByteArray): BooleanArray {
@@ -143,4 +209,15 @@ class Mnemonic {
 
     class InvalidMnemonicKeyException(message: String) : MnemonicException(message)
 
+    class ChecksumException(message: String) : MnemonicException(message)
+
 }
+
+
+//
+// Private Extensions
+//
+
+private fun ByteArray?.toSha256() = MessageDigest.getInstance("SHA-256").digest(this)
+
+private fun Byte.toBits(): List<Boolean> = (7 downTo 0).map { (toInt() and (1 shl it)) != 0 }
