@@ -60,6 +60,14 @@ class MnemonicTest {
         mnemonic.validate(mnemonicKeys)
     }
 
+    @Test(expected = Mnemonic.ChecksumException::class)
+    fun validate_InvalidChecksum() {
+
+        val mnemonicKeys = listOf("jealous", "olympic", "digital", "west", "actor", "thunder", "matter", "marble", "marine", "range", "dust", "banner")
+
+        mnemonic.validate(mnemonicKeys)
+    }
+
     @Test
     fun toSeed_Success() {
 
