@@ -73,7 +73,7 @@ class Mnemonic {
     /**
      * Convert mnemonic keys to seed
      */
-    fun toSeed(mnemonicKeys: List<String>): ByteArray {
+    fun toSeed(mnemonicKeys: List<String>, passphrase: String = ""): ByteArray {
 
         validate(mnemonicKeys)
 
@@ -85,7 +85,7 @@ class Mnemonic {
         // derived key is 512 bits (= 64 bytes).
         //
         val pass = mnemonicKeys.joinToString(separator = " ")
-        val salt = "mnemonic"
+        val salt = "mnemonic$passphrase"
 
         return PBKDF2SHA512.derive(pass, salt, PBKDF2_ROUNDS, 64)
     }
