@@ -17,6 +17,7 @@ package io.horizontalsystems.hdwalletkit;
  */
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -111,6 +112,33 @@ public class HDKey extends ECKey {
     }
 
     /**
+     * Serialize public key to Base58 ("xpub" )
+     * @return the key serialized as a Base58 address
+     */
+    public String serializePubB58() {
+        return toBase58(serializePub());
+    }
+
+    private byte[] serializePub() {
+        ByteBuffer ser = ByteBuffer.allocate(78);
+        ser.putInt(0x0488b21e); //The 4 byte header that serializes in base58 to "xpub"
+        ser.put((byte) getDepth());
+        ser.putInt(getParentFingerprint());
+        ser.putInt(getChildNumberEncoded());
+        ser.put(getChainCode());
+        ser.put(getPubKey());
+        if(ser.position() != 78){
+            throw new IllegalStateException();
+        }
+        return ser.array();
+    }
+
+    static String toBase58(byte[] ser) {
+        return Base58.encode(addChecksum(ser));
+    }
+
+
+    /**
      * Return the parent
      *
      * @return Parent or null if this is the root key
@@ -126,6 +154,10 @@ public class HDKey extends ECKey {
      */
     public int getChildNumber() {
         return childNumber;
+    }
+
+    private int getChildNumberEncoded() {
+        return isHardened ? (childNumber | HARDENED_FLAG) : childNumber;
     }
 
     /**
@@ -196,7 +228,7 @@ public class HDKey extends ECKey {
      * @param input Serialized key
      * @return Key plus checksum
      */
-    private byte[] addChecksum(byte[] input) {
+    public static byte[] addChecksum(byte[] input) {
         int inputLength = input.length;
         byte[] checksummed = new byte[inputLength + 4];
         System.arraycopy(input, 0, checksummed, 0, inputLength);
