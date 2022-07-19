@@ -44,6 +44,22 @@ class MnemonicTest {
         mnemonic.validate(mnemonicKeys)
     }
 
+    @Test
+    fun validate_Spanish_Success() {
+
+        val mnemonicKeys = listOf("fresa", "miope", "triste", "bozal", "ética", "risa", "virgo", "nariz", "gráfico", "regla", "selva", "uva", "olivo", "candil", "servir")
+
+        mnemonic.validate(mnemonicKeys)
+    }
+
+    @Test
+    fun validate_Chinese_Success() {
+
+        val mnemonicKeys = listOf("搞", "顿", "雏", "百", "跑", "秒", "摊", "婚", "父", "迷", "挺", "卢", "浪", "目", "吏")
+
+        mnemonic.validate(mnemonicKeys)
+    }
+
     @Test(expected = Mnemonic.InvalidMnemonicCountException::class)
     fun validate_WrongWordsCount() {
 
@@ -52,10 +68,26 @@ class MnemonicTest {
         mnemonic.validate(mnemonicKeys)
     }
 
+    @Test(expected = Mnemonic.InvalidMnemonicCountException::class)
+    fun validate_WrongWordsCount_SimplifiedChinese() {
+
+        val mnemonicKeys = listOf("搞", "顿", "雏", "百", "跑", "秒", "摊", "婚", "父", "迷", "挺", "卢", "浪", "目", "吏", "搞")
+
+        mnemonic.validate(mnemonicKeys)
+    }
+
     @Test(expected = Mnemonic.InvalidMnemonicKeyException::class)
     fun validate_InvalidMnemonicKey() {
 
         val mnemonicKeys = listOf("jealous", "digitalll", "west", "actor", "thunder", "matter", "marble", "marine", "olympic", "range", "dust", "banner")
+
+        mnemonic.validate(mnemonicKeys)
+    }
+
+    @Test(expected = Mnemonic.InvalidMnemonicKeyException::class)
+    fun validate_MixedLanguageMnemonicKey() {
+
+        val mnemonicKeys = listOf("あいこくしん", "digital", "west", "actor", "thunder", "matter", "marble", "marine", "olympic", "range", "dust", "banner")
 
         mnemonic.validate(mnemonicKeys)
     }
