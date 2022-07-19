@@ -1,4 +1,5 @@
 package io.horizontalsystems.hdwalletkit
+
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.security.SecureRandom
@@ -9,19 +10,39 @@ class Mnemonic {
 
     private val PBKDF2_ROUNDS = 2048
 
-    enum class Strength(val value: Int) {
+    enum class EntropyStrength(val entropyLength: Int) {
         Default(128),
         Low(160),
         Medium(192),
         High(224),
-        VeryHigh(256)
+        VeryHigh(256);
+
+        val checksumLength: Int
+            get() = entropyLength / 32
+
+        val totalLength: Int
+            get() = entropyLength + checksumLength
+
+        val wordCount: Int
+            get() = checksumLength * 3
+
+        companion object {
+            fun fromWordCount(wordCount: Int) = when (wordCount) {
+                12 -> Default
+                15 -> Low
+                18 -> Medium
+                21 -> High
+                24 -> VeryHigh
+                else -> throw InvalidMnemonicCountException("Count: $wordCount")
+            }
+        }
     }
 
     /**
      * Generate mnemonic keys
      */
-    fun generate(strength: Strength = Strength.Default): List<String> {
-        val seed = ByteArray(strength.value / 8)
+    fun generate(strength: EntropyStrength = EntropyStrength.Default): List<String> {
+        val seed = ByteArray(strength.entropyLength / 8)
         val random = SecureRandom()
         random.nextBytes(seed)
         return toMnemonic(seed)
@@ -92,29 +113,44 @@ class Mnemonic {
 
 
     /**
-     * Validate mnemonic keys
+     * Validate mnemonic keys. Since validation
+     * requires deriving the original entropy, this function is the same as calling [toEntropy]
      */
     fun validate(mnemonicKeys: List<String>) {
+        val words = getWords(mnemonicKeys)
+        toEntropy(mnemonicKeys, words)
+    }
 
-        if (mnemonicKeys.size !in (12..24 step 3)) {
-            throw InvalidMnemonicCountException("Count: ${mnemonicKeys.size}")
-        }
+    fun isWordValid(word: String, partial: Boolean = false) =
+            Language.values().any { language ->
+                val words = WordList.getWords(language)
+                if (partial) {
+                    words.any { it.startsWith(word) }
+                } else {
+                    words.contains(word)
+                }
+            }
 
-        val wordsList = WordList.getWords()
-
-        for (mnemonic: String in mnemonicKeys) {
+    @Throws(InvalidMnemonicKeyException::class)
+    private fun validateMnemonicKeys(mnemonicKeys: List<String>, wordsList: List<String>) {
+        for (mnemonic in mnemonicKeys) {
             if (!wordsList.contains(mnemonic))
                 throw InvalidMnemonicKeyException("Invalid word: $mnemonic")
         }
-
-        validateChecksum(mnemonicKeys)
     }
 
-    /**
-     * Convenience method for validating the checksum of this MnemonicCode. Since validation
-     * requires deriving the original entropy, this function is the same as calling [toEntropy].
-     */
-    fun validateChecksum(mnemonicKeys: List<String>) = toEntropy(mnemonicKeys)
+    private fun getWords(mnemonicKeys: List<String>): List<String> {
+        for (language in Language.values()) {
+            try {
+                val words = WordList.getWords(language)
+                validateMnemonicKeys(mnemonicKeys, words)
+                return words
+            } catch (exception: InvalidMnemonicKeyException) {
+            }
+        }
+
+        return WordList.getWords(Language.English)
+    }
 
     /**
      * Get the original entropy that was used to create this MnemonicCode. This call will fail
@@ -125,22 +161,20 @@ class Mnemonic {
      *
      * source: https://github.com/zcash/kotlin-bip39/blob/master/lib/src/main/java/cash/z/ecc/android/bip39/Mnemonics.kt
      */
-    fun toEntropy(mnemonicKeys: List<String>): ByteArray {
-        mnemonicKeys.size.let { if (it <= 0 || it % 3 > 0) throw InvalidMnemonicCountException("Count: ${mnemonicKeys.size}") }
+    fun toEntropy(mnemonicKeys: List<String>, words: List<String>): ByteArray {
+
+        val strength = EntropyStrength.fromWordCount(mnemonicKeys.size)
 
         // Look up all the words in the list and construct the
         // concatenation of the original entropy and the checksum.
         //
-        val totalLengthBits = mnemonicKeys.size * 11
-        val checksumLengthBits = totalLengthBits / 33
-        val entropy = ByteArray((totalLengthBits - checksumLengthBits) / 8)
+        val entropy = ByteArray(strength.entropyLength / 8)
         val checksumBits = mutableListOf<Boolean>()
 
-        val words = WordList.getWords()
         var bitsProcessed = 0
         var nextByte = 0.toByte()
         mnemonicKeys.forEach {
-            words.binarySearch(it).let { phraseIndex ->
+            words.indexOf(it).let { phraseIndex ->
                 // fail if the word was not found on the list
                 if (phraseIndex < 0) throw InvalidMnemonicKeyException("Invalid word: $it")
                 // for each of the 11 bits of the phraseIndex
@@ -165,7 +199,7 @@ class Mnemonic {
 
         // Check each required checksum bit, against the first byte of the sha256 of entropy
         entropy.toSha256()[0].toBits().let { hashFirstByteBits ->
-            repeat(checksumLengthBits) { i ->
+            repeat(strength.checksumLength) { i ->
                 // failure means that each word was valid BUT they were in the wrong order
                 if (hashFirstByteBits[i] != checksumBits[i]) throw ChecksumException("Invalid checksum")
             }
