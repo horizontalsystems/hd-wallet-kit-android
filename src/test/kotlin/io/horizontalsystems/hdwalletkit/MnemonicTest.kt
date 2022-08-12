@@ -24,7 +24,7 @@ class MnemonicTest {
     @Test
     fun toMnemonic_Success() {
         val entropy: ByteArray = hexStringToByteArray("7787bfe5815e1912a1ec409a56391109")
-        val mnemonicWords = mnemonic.toMnemonic(entropy).joinToString(separator = " ")
+        val mnemonicWords = mnemonic.toMnemonic(entropy, Language.English).joinToString(separator = " ")
         val expectedWords = "jealous digital west actor thunder matter marble marine olympic range dust banner"
         Assert.assertEquals(mnemonicWords, expectedWords)
     }
@@ -33,7 +33,7 @@ class MnemonicTest {
     @Throws(Exception::class)
     fun toMnemonic_EmptyEntropy() {
         val entropy: ByteArray = hexStringToByteArray("")
-        mnemonic.toMnemonic(entropy)
+        mnemonic.toMnemonic(entropy, Language.English)
     }
 
     @Test

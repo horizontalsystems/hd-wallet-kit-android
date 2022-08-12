@@ -41,17 +41,20 @@ class Mnemonic {
     /**
      * Generate mnemonic keys
      */
-    fun generate(strength: EntropyStrength = EntropyStrength.Default): List<String> {
+    fun generate(
+        strength: EntropyStrength = EntropyStrength.Default,
+        language: Language = Language.English
+    ): List<String> {
         val seed = ByteArray(strength.entropyLength / 8)
         val random = SecureRandom()
         random.nextBytes(seed)
-        return toMnemonic(seed)
+        return toMnemonic(seed, language)
     }
 
     /**
      * Convert entropy data to mnemonic word list.
      */
-    fun toMnemonic(entropy: ByteArray): List<String> {
+    fun toMnemonic(entropy: ByteArray, language: Language): List<String> {
         if (entropy.isEmpty())
             throw EmptyEntropyException("Entropy is empty.")
 
@@ -74,7 +77,7 @@ class Mnemonic {
         // which is a position in a wordlist.  We convert numbers into
         // words and use joined words as mnemonic sentence.
 
-        val wordList = WordList.getWords()
+        val wordList = WordList.getWords(language)
         val words = ArrayList<String>()
         val nwords = concatBits.size / 11
         for (i in 0 until nwords) {
