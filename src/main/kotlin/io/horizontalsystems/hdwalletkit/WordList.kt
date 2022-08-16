@@ -1,19 +1,24 @@
 package io.horizontalsystems.hdwalletkit
 
+import java.lang.IllegalStateException
+
 object WordList {
 
-    fun wordList(language: Language):MnemonicWordList = when(language) {
-        Language.English -> MnemonicWordList(english, false)
-        Language.Japanese -> MnemonicWordList(japanese, false)
-        Language.Korean -> MnemonicWordList(korean, false)
-        Language.Spanish -> MnemonicWordList(spanish, true)
-        Language.SimplifiedChinese -> MnemonicWordList(simplifiedChinese, false)
-        Language.TraditionalChinese -> MnemonicWordList(traditionalChinese, false)
-        Language.French -> MnemonicWordList(english, true)
-        Language.Italian -> MnemonicWordList(italian, false)
-        Language.Czech -> MnemonicWordList(czech, false)
-        Language.Portuguese -> MnemonicWordList(portuguese, false)
-    }
+    private val wordListsMap = mapOf(
+            Language.English to MnemonicWordList(english, false),
+            Language.Japanese to MnemonicWordList(japanese, false),
+            Language.Korean to MnemonicWordList(korean, false),
+            Language.Spanish to MnemonicWordList(spanish, true),
+            Language.SimplifiedChinese to MnemonicWordList(simplifiedChinese, false),
+            Language.TraditionalChinese to MnemonicWordList(traditionalChinese, false),
+            Language.French to MnemonicWordList(english, true),
+            Language.Italian to MnemonicWordList(italian, false),
+            Language.Czech to MnemonicWordList(czech, false),
+            Language.Portuguese to MnemonicWordList(portuguese, false)
+    )
+
+    fun wordList(language: Language): MnemonicWordList = wordListsMap[language]
+            ?: throw IllegalStateException("No MnemonicWordList found for language: ${language.name}")
 
     private val english: List<String>
         get() = """
