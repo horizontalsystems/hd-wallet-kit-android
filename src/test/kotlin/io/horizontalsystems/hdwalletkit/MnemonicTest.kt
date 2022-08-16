@@ -53,6 +53,14 @@ class MnemonicTest {
     }
 
     @Test
+    fun validate_Spanish_With_Diacriticals_Success() {
+
+        val mnemonicKeys = listOf("exceso", "tobillo", "cuento", "tapa", "fibra", "rueda", "mojar", "gente", "caimán", "coco", "médula", "oculto")
+
+        mnemonic.validate(mnemonicKeys)
+    }
+
+    @Test
     fun validate_Chinese_Success() {
 
         val mnemonicKeys = listOf("搞", "顿", "雏", "百", "跑", "秒", "摊", "婚", "父", "迷", "挺", "卢", "浪", "目", "吏")

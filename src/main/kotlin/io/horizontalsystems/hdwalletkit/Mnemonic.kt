@@ -77,7 +77,7 @@ class Mnemonic {
         // which is a position in a wordlist.  We convert numbers into
         // words and use joined words as mnemonic sentence.
 
-        val wordList = WordList.getWords(language)
+        val wordList = WordList.wordList(language)
         val words = ArrayList<String>()
         val nwords = concatBits.size / 11
         for (i in 0 until nwords) {
@@ -120,39 +120,20 @@ class Mnemonic {
      * requires deriving the original entropy, this function is the same as calling [toEntropy]
      */
     fun validate(mnemonicKeys: List<String>) {
-        val words = getWords(mnemonicKeys)
-        toEntropy(mnemonicKeys, words)
-    }
+        var appropriateWordList  =  WordList.wordList(Language.English)
 
-    fun isWordValid(word: String, partial: Boolean = false) =
-            Language.values().any { language ->
-                val words = WordList.getWords(language)
-                if (partial) {
-                    words.any { it.startsWith(word) }
-                } else {
-                    words.contains(word)
-                }
-            }
-
-    @Throws(InvalidMnemonicKeyException::class)
-    private fun validateMnemonicKeys(mnemonicKeys: List<String>, wordsList: List<String>) {
-        for (mnemonic in mnemonicKeys) {
-            if (!wordsList.contains(mnemonic))
-                throw InvalidMnemonicKeyException("Invalid word: $mnemonic")
-        }
-    }
-
-    private fun getWords(mnemonicKeys: List<String>): List<String> {
         for (language in Language.values()) {
-            try {
-                val words = WordList.getWords(language)
-                validateMnemonicKeys(mnemonicKeys, words)
-                return words
-            } catch (exception: InvalidMnemonicKeyException) {
+            val wordList = WordList.wordList(language)
+            if (wordList.validWords(mnemonicKeys)) {
+                 appropriateWordList = wordList
             }
         }
 
-        return WordList.getWords(Language.English)
+        toEntropy(mnemonicKeys, appropriateWordList)
+    }
+
+    fun isWordValid(word: String, partial: Boolean) = Language.values().any { language ->
+        WordList.wordList(language).validWord(word, partial)
     }
 
     /**
@@ -164,7 +145,7 @@ class Mnemonic {
      *
      * source: https://github.com/zcash/kotlin-bip39/blob/master/lib/src/main/java/cash/z/ecc/android/bip39/Mnemonics.kt
      */
-    fun toEntropy(mnemonicKeys: List<String>, words: List<String>): ByteArray {
+    fun toEntropy(mnemonicKeys: List<String>, wordList: MnemonicWordList): ByteArray {
 
         val strength = EntropyStrength.fromWordCount(mnemonicKeys.size)
 
@@ -177,7 +158,7 @@ class Mnemonic {
         var bitsProcessed = 0
         var nextByte = 0.toByte()
         mnemonicKeys.forEach {
-            words.indexOf(it).let { phraseIndex ->
+            wordList.indexOf(it).let { phraseIndex ->
                 // fail if the word was not found on the list
                 if (phraseIndex < 0) throw InvalidMnemonicKeyException("Invalid word: $it")
                 // for each of the 11 bits of the phraseIndex

@@ -2,19 +2,18 @@ package io.horizontalsystems.hdwalletkit
 
 object WordList {
 
-    fun getWords(language: Language = Language.English) =
-            when (language) {
-                Language.English -> english
-                Language.Japanese -> japanese
-                Language.Korean -> korean
-                Language.Spanish -> spanish
-                Language.SimplifiedChinese -> simplifiedChinese
-                Language.TraditionalChinese -> traditionalChinese
-                Language.French -> french
-                Language.Italian -> italian
-                Language.Czech -> czech
-                Language.Portuguese -> portuguese
-            }
+    fun wordList(language: Language):MnemonicWordList = when(language) {
+        Language.English -> MnemonicWordList(english, false)
+        Language.Japanese -> MnemonicWordList(japanese, false)
+        Language.Korean -> MnemonicWordList(korean, false)
+        Language.Spanish -> MnemonicWordList(spanish, true)
+        Language.SimplifiedChinese -> MnemonicWordList(simplifiedChinese, false)
+        Language.TraditionalChinese -> MnemonicWordList(traditionalChinese, false)
+        Language.French -> MnemonicWordList(english, true)
+        Language.Italian -> MnemonicWordList(italian, false)
+        Language.Czech -> MnemonicWordList(czech, false)
+        Language.Portuguese -> MnemonicWordList(portuguese, false)
+    }
 
     private val english: List<String>
         get() = """
