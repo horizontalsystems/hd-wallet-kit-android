@@ -43,4 +43,16 @@ class MnemonicWordList(
             string
     }
 
+    fun fetchSuggestions(input: String): List<String> {
+        val suggestions = mutableListOf<String>()
+
+        for (word in normalizedWords) {
+            if (word.startsWith(normalize(input))) {
+                suggestions.add(word)
+            }
+        }
+
+        return suggestions.distinct()
+    }
+
 }

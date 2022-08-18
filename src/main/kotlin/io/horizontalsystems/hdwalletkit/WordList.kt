@@ -1,7 +1,5 @@
 package io.horizontalsystems.hdwalletkit
 
-import java.lang.IllegalStateException
-
 object WordList {
 
     private val wordListsMap = mapOf(
@@ -19,6 +17,26 @@ object WordList {
 
     fun wordList(language: Language): MnemonicWordList = wordListsMap[language]
             ?: throw IllegalStateException("No MnemonicWordList found for language: ${language.name}")
+
+    fun detectLanguages(inputWords: List<String>): List<Language> {
+        var languages = Language.values().toList()
+
+        for (word in inputWords) {
+            val filteredLanguages = filterLanguages(languages, word)
+            if (filteredLanguages.isNotEmpty()) {
+                languages = filteredLanguages
+            }
+        }
+
+        return languages
+    }
+
+    private fun filterLanguages(languages: List<Language>, word: String): List<Language> {
+        return languages.filter { lang ->
+            val wordList = wordList(lang)
+            wordList.validWord(word, true)
+        }
+    }
 
     private val english: List<String>
         get() = """
