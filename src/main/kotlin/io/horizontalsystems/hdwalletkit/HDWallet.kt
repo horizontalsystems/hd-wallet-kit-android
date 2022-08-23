@@ -58,7 +58,7 @@ class HDWallet(seed: ByteArray, private val coinType: Int, val gapLimit: Int = 2
         return privateKey(account, index, if (external) Chain.EXTERNAL.ordinal else Chain.INTERNAL.ordinal)
     }
 
-    private fun privateKey(path: String): HDKey {
+    fun privateKey(path: String): HDKey {
         return hdKeychain.getKeyByPath(path)
     }
 
