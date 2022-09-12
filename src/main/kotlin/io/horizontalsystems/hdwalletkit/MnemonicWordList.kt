@@ -45,9 +45,10 @@ class MnemonicWordList(
 
     fun fetchSuggestions(input: String): List<String> {
         val suggestions = mutableListOf<String>()
+        val normalizedInput = normalize(input)
 
         for (word in normalizedWords) {
-            if (word.startsWith(normalize(input))) {
+            if (word.startsWith(normalizedInput)) {
                 suggestions.add(word)
             }
         }

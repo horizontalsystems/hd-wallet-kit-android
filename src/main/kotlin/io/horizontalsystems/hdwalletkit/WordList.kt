@@ -9,7 +9,7 @@ object WordList {
             Language.Spanish to MnemonicWordList(spanish, true),
             Language.SimplifiedChinese to MnemonicWordList(simplifiedChinese, false),
             Language.TraditionalChinese to MnemonicWordList(traditionalChinese, false),
-            Language.French to MnemonicWordList(english, true),
+            Language.French to MnemonicWordList(french, true),
             Language.Italian to MnemonicWordList(italian, false),
             Language.Czech to MnemonicWordList(czech, false),
             Language.Portuguese to MnemonicWordList(portuguese, false)
