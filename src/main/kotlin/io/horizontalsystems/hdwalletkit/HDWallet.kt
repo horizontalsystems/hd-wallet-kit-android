@@ -36,7 +36,7 @@ class HDWallet(seed: ByteArray, private val coinType: Int, val gapLimit: Int = 2
     }
 
     fun hdPublicKeys(account: Int, indices: IntRange, external: Boolean): List<HDPublicKey> {
-        val parentPrivateKey = privateKey("m/${purpose.value}'/$coinType'/$account'/${if (external) 0 else 1}") // todo: this may be a bug they are missing the last ' in the path same for others below
+        val parentPrivateKey = privateKey("m/${purpose.value}'/$coinType'/$account'/${if (external) 0 else 1}")
         return hdKeychain
             .deriveNonHardenedChildKeys(parentPrivateKey, indices)
             .map {
