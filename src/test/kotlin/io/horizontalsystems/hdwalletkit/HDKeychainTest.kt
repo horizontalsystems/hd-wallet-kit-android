@@ -28,7 +28,7 @@ class HDKeychainTest {
     fun getPublicExtendedKey_Bip44() {
         val path44 = "m/44'/0'/0'"
         val hdKey = hdKeyManager.getKeyByPath(path44)
-        val base58 = hdKey.serializePubB58()
+        val base58 = hdKey.serializePublic(HDExtendedKeyVersion.xpub.value)
         val expected = "xpub6BfAPDy2cSaTkCKVdEw9eJUZ1UbGuu2pbdJ5zoLGHfTRk4vaKW3G2qEQTbR8ZEYAoK6388DxQxurnhaRfnZumhsKwUoT1Rro4EQFq7AhEyB"
 
         Assert.assertEquals(expected, base58)

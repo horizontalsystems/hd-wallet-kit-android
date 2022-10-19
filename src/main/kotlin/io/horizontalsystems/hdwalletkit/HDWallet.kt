@@ -1,6 +1,29 @@
 package io.horizontalsystems.hdwalletkit
 
-class HDWallet(seed: ByteArray, private val coinType: Int, val gapLimit: Int = 20, purpose: Purpose = Purpose.BIP44) {
+class HDWallet(
+    private val hdKeychain: HDKeychain,
+    private val coinType: Int,
+    val gapLimit: Int,
+    purpose: Purpose
+) {
+
+    constructor(
+        seed: ByteArray,
+        coinType: Int,
+        purpose: Purpose,
+        gapLimit: Int = 20
+    ) : this(
+        HDKeychain(seed), coinType, gapLimit, purpose
+    )
+
+    constructor(
+        masterKey: HDKey,
+        coinType: Int,
+        purpose: Purpose,
+        gapLimit: Int = 20
+    ) : this(
+        HDKeychain(masterKey), coinType, gapLimit, purpose
+    )
 
     enum class Chain {
         EXTERNAL, INTERNAL
@@ -11,8 +34,6 @@ class HDWallet(seed: ByteArray, private val coinType: Int, val gapLimit: Int = 2
         BIP49(49),
         BIP84(84)
     }
-
-    private val hdKeychain: HDKeychain = HDKeychain(seed)
 
     // m / purpose' / coin_type' / account' / change / address_index
     //
@@ -30,24 +51,23 @@ class HDWallet(seed: ByteArray, private val coinType: Int, val gapLimit: Int = 2
     // private var coinType: Int = 0
 
     fun hdPublicKey(account: Int, index: Int, external: Boolean): HDPublicKey {
-        return HDPublicKey(index = index, external = external, key = privateKey(account = account, index = index, chain = if (external) 0 else 1))
+        return HDPublicKey(privateKey(account = account, index = index, chain = if (external) 0 else 1))
     }
 
     fun hdPublicKeys(account: Int, indices: IntRange, external: Boolean): List<HDPublicKey> {
-        val parentPrivateKey = privateKey("m/$purpose'/$coinType'/$account'/${if (external) 0 else 1}")
-        return hdKeychain
-                .deriveNonHardenedChildKeys(parentPrivateKey, indices)
-                .map {
-                    HDPublicKey(it.childNumber, external, it)
-                }
+        val parentPrivateKey =
+            privateKey("m/$purpose'/$coinType'/$account'/${if (external) 0 else 1}")
+        return hdKeychain.deriveNonHardenedChildKeys(parentPrivateKey, indices).map {
+            HDPublicKey(it)
+        }
     }
 
     fun receiveHDPublicKey(account: Int, index: Int): HDPublicKey {
-        return HDPublicKey(index = index, external = true, key = privateKey(account = account, index = index, chain = 0))
+        return HDPublicKey(privateKey(account = account, index = index, chain = 0))
     }
 
     fun changeHDPublicKey(account: Int, index: Int): HDPublicKey {
-        return HDPublicKey(index = index, external = false, key = privateKey(account = account, index = index, chain = 1))
+        return HDPublicKey(privateKey(account = account, index = index, chain = 1))
     }
 
     fun privateKey(account: Int, index: Int, chain: Int): HDKey {
@@ -55,7 +75,9 @@ class HDWallet(seed: ByteArray, private val coinType: Int, val gapLimit: Int = 2
     }
 
     fun privateKey(account: Int, index: Int, external: Boolean): HDKey {
-        return privateKey(account, index, if (external) Chain.EXTERNAL.ordinal else Chain.INTERNAL.ordinal)
+        return privateKey(
+            account, index, if (external) Chain.EXTERNAL.ordinal else Chain.INTERNAL.ordinal
+        )
     }
 
     fun privateKey(path: String): HDKey {

@@ -6,6 +6,16 @@ public class Base58 {
     public static final char[] ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".toCharArray();
     private static final char ENCODED_ZERO = ALPHABET[0];
 
+    /** Lookup index for US-ASCII characters (code points 0-127) */
+    private static final int[] INDEXES = new int[128];
+
+    static {
+        for (int i=0; i<INDEXES.length; i++)
+            INDEXES[i] = -1;
+        for (int i=0; i<ALPHABET.length; i++)
+            INDEXES[ALPHABET[i]] = i;
+    }
+
     /**
      * Encodes the given bytes as a base58 string (no checksum is appended).
      *
@@ -40,6 +50,64 @@ public class Base58 {
         }
         // Return encoded string (including encoded leading zeros).
         return new String(encoded, outputStart, encoded.length - outputStart);
+    }
+
+    /**
+     * Decodes a Base58 string
+     *
+     * @param   string                          Encoded string
+     * @return                                  Decoded bytes
+     * @throws      IllegalArgumentException    Invalid Base-58 encoded string
+     */
+    public static byte[] decode(String string) throws IllegalArgumentException {
+        //
+        // Nothing to do if we have an empty string
+        //
+        if (string.length() == 0)
+            return new byte[0];
+        //
+        // Convert the input string to a byte sequence
+        //
+        byte[] input = new byte[string.length()];
+        for (int i=0; i<string.length(); i++) {
+            int codePoint = string.codePointAt(i);
+            int digit = -1;
+            if (codePoint>=0 && codePoint<INDEXES.length)
+                digit = INDEXES[codePoint];
+            if (digit < 0)
+                throw new IllegalArgumentException(
+                        String.format("Illegal character %c at index %d", string.charAt(i), i));
+            input[i] = (byte)digit;
+        }
+        //
+        // Count the number of leading zero characters
+        //
+        int zeroCount = 0;
+        while (zeroCount < input.length && input[zeroCount] == 0)
+            zeroCount++;
+        //
+        // Convert from Base58 encoding starting with the first non-zero character
+        //
+        byte[] decoded = new byte[input.length];
+        int decodedOffset = decoded.length;
+        int offset = zeroCount;
+        while (offset < input.length) {
+            byte mod = divmod(input, offset, 58, 256);
+            if (input[offset] == 0)
+                offset++;
+            decoded[--decodedOffset] = mod;
+        }
+        //
+        // Strip leading zeroes from the decoded result
+        //
+        while (decodedOffset < decoded.length && decoded[decodedOffset] == 0)
+            decodedOffset++;
+        //
+        // Return the decoded result prefixed with the number of leading zeroes
+        // that were in the original string
+        //
+        byte[] output = Arrays.copyOfRange(decoded, decodedOffset-zeroCount, decoded.length);
+        return output;
     }
 
     /**
