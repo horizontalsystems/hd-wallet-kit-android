@@ -53,7 +53,7 @@ public class HDKeyDerivation {
             throw new HDDerivationException("Generated master private key is zero");
         if (privKey.compareTo(ECKey.ecParams.getN()) >= 0)
             throw new HDDerivationException("Generated master private key is not less than N");
-        return new HDKey(privKey, ir, null, 0, false);
+        return new HDKey(privKey, ir, null, 0, 0, 0, false);
     }
 
     /**
@@ -133,7 +133,7 @@ public class HDKeyDerivation {
         BigInteger ki = parent.getPrivKey().add(ilInt).mod(ECKey.ecParams.getN());
         if (ki.signum() == 0)
             throw new HDDerivationException("Derived private key is zero");
-        return new HDKey(ki, ir, parent, childNumber, hardened);
+        return new HDKey(ki, ir, parent, parent.getFingerprint(), parent.getDepth() + 1, childNumber, hardened);
     }
 
     /**
@@ -167,7 +167,7 @@ public class HDKeyDerivation {
         ECPoint Ki = ECKey.pubKeyPointFromPrivKey(ilInt).add(pubKeyPoint);
         if (Ki.equals(ECKey.ecParams.getCurve().getInfinity()))
             throw new HDDerivationException("Derived public key equals infinity");
-        return new HDKey(Ki.getEncoded(true), ir, parent, childNumber, false);
+        return new HDKey(Ki.getEncoded(true), ir, parent, parent.getFingerprint(), parent.getDepth() + 1, childNumber, false);
     }
 
 }
