@@ -3,8 +3,7 @@ package io.horizontalsystems.hdwalletkit
 import io.horizontalsystems.hdwalletkit.HDWallet.Chain
 
 class HDWalletAccount(
-    accountPrivateKey: HDKey,
-    val gapLimit: Int
+    accountPrivateKey: HDKey
 ) {
     private val hdKeychain: HDKeychain = HDKeychain(accountPrivateKey)
 

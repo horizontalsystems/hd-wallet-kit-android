@@ -3,26 +3,23 @@ package io.horizontalsystems.hdwalletkit
 class HDWallet(
     private val hdKeychain: HDKeychain,
     private val coinType: Int,
-    val gapLimit: Int,
     purpose: Purpose
 ) {
 
     constructor(
         seed: ByteArray,
         coinType: Int,
-        purpose: Purpose,
-        gapLimit: Int = 20
+        purpose: Purpose
     ) : this(
-        HDKeychain(seed), coinType, gapLimit, purpose
+        HDKeychain(seed), coinType, purpose
     )
 
     constructor(
         masterKey: HDKey,
         coinType: Int,
-        purpose: Purpose,
-        gapLimit: Int = 20
+        purpose: Purpose
     ) : this(
-        HDKeychain(masterKey), coinType, gapLimit, purpose
+        HDKeychain(masterKey), coinType, purpose
     )
 
     enum class Chain {
