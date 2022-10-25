@@ -109,17 +109,18 @@ class HDExtendedKey(
         }
 
         @Throws
-        fun validate(extendedKey: ByteArray, isPublic: Boolean) {
-            if (extendedKey.size != length) {
+        fun validate(serialized: String, isPublic: Boolean) {
+            val raw = Base58.decode(serialized)
+            if (raw.size != length) {
                 throw ParsingError.WrongKeyLength
             }
 
-            val version = HDExtendedKeyVersion.initFrom(extendedKey.sliceArray(0..4))
-            if (version == null || version.isPublic != isPublic) {
+            val version = version(serialized)
+            if (version.isPublic != isPublic) {
                 throw ParsingError.WrongVersion
             }
 
-            validateChecksum(extendedKey)
+            validateChecksum(raw)
         }
 
         fun validateChecksum(extendedKey: ByteArray) {
