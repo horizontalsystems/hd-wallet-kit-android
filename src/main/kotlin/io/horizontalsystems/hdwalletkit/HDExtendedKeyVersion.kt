@@ -55,7 +55,7 @@ enum class HDExtendedKeyVersion(
             purpose: Purpose,
             coinType: ExtendedKeyCoinType,
             isPrivate: Boolean
-        ): HDExtendedKeyVersion? {
+        ): HDExtendedKeyVersion {
             return when (purpose) {
                 Purpose.BIP44 -> {
                     when (coinType) {
@@ -72,10 +72,7 @@ enum class HDExtendedKeyVersion(
                 }
 
                 Purpose.BIP84 -> {
-                    when (coinType) {
-                        ExtendedKeyCoinType.Bitcoin -> if (isPrivate) zprv else zpub
-                        ExtendedKeyCoinType.Litecoin -> null
-                    }
+                    if (isPrivate) zprv else zpub
                 }
             }
         }
