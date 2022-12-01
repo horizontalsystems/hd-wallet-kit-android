@@ -3,17 +3,15 @@ package io.horizontalsystems.hdwalletkit
 import java.text.Normalizer
 
 class MnemonicWordList(
-        private val words: List<String>,
-        private val mustBeNormalized: Boolean
+    private val words: List<String>
 ) {
-    private val normalizedWords = words.map { normalize(it) }
 
     operator fun get(index: Int): String {
         return words[index]
     }
 
     fun indexOf(word: String): Int {
-        return normalizedWords.indexOf(normalize(word))
+        return words.indexOf(normalize(word))
     }
 
     fun validWord(word: String, partial: Boolean = false): Boolean {
@@ -29,25 +27,24 @@ class MnemonicWordList(
     }
 
     private fun startsWith(prefix: String): Boolean {
-        return normalizedWords.any { it.startsWith(normalize(prefix)) }
+        return words.any { it.startsWith(normalize(prefix)) }
     }
 
     private fun contains(mnemonic: String): Boolean {
-        return normalizedWords.contains(normalize(mnemonic))
+        return words.contains(normalize(mnemonic))
     }
 
-    private fun normalize(string: String): String {
-        return if (mustBeNormalized)
-            Normalizer.normalize(string, Normalizer.Form.NFKD).replace("[^\\p{ASCII}]".toRegex(), "")
-        else
-            string
+    companion object {
+        fun normalize(string: String): String {
+                return Normalizer.normalize(string, Normalizer.Form.NFKD)
+        }
     }
 
     fun fetchSuggestions(input: String): List<String> {
         val suggestions = mutableListOf<String>()
         val normalizedInput = normalize(input)
 
-        for (word in normalizedWords) {
+        for (word in words) {
             if (word.startsWith(normalizedInput)) {
                 suggestions.add(word)
             }

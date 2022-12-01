@@ -120,6 +120,35 @@ class MnemonicTest {
         Assert.assertArrayEquals(seed, expectedSeed)
     }
 
+    @Test
+    fun toSeed_WithDiacriticalSigns() {
+        val incorrect = "típico"
+        val correct = "típico"
+
+        val mnemonicKeys = listOf("pudor", "ahorro", "frase", "alteza", "rugir", "tesoro", "veinte", "surgir", "trufa", "lucir", "dibujo", correct)
+
+        val incorrectNormalized = MnemonicWordList.normalize(incorrect)
+        val correctNormalized =  MnemonicWordList.normalize(correct)
+
+        println("equals: ${incorrect == correct}")
+        println("equals normalized: ${incorrectNormalized == correctNormalized}")
+
+         val wordList = WordList.wordList(Language.French)
+             for (i in 0 until 2048) {
+             if (wordList[i] != MnemonicWordList.normalize(wordList[i])) {
+                 println("+++++++++++++++++++++++++++++++++++++++++++++++")
+             }
+         }
+
+        val seed = mnemonic.toSeed(mnemonicKeys)
+        val expectedSeed = hexStringToByteArray("0bb23497af85a8ef111036235631591385a2ae5246a257b2c6ba12d4df0acb64b88508c2bed90f4d58e6221f726b9029177edd6fd69bde3fb450d12dded2931d")
+
+        println(seed.toHexString())
+        println(expectedSeed.toHexString())
+
+        Assert.assertArrayEquals(seed, expectedSeed)
+    }
+
     @Test(expected = Mnemonic.InvalidMnemonicCountException::class)
     fun toSeed_WrongWordsCount() {
 
