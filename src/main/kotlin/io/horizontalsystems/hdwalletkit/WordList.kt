@@ -3,16 +3,16 @@ package io.horizontalsystems.hdwalletkit
 object WordList {
 
     private val wordListsMap = mapOf(
-            Language.English to MnemonicWordList(english, false),
-            Language.Japanese to MnemonicWordList(japanese, false),
-            Language.Korean to MnemonicWordList(korean, false),
-            Language.Spanish to MnemonicWordList(spanish, true),
-            Language.SimplifiedChinese to MnemonicWordList(simplifiedChinese, false),
-            Language.TraditionalChinese to MnemonicWordList(traditionalChinese, false),
-            Language.French to MnemonicWordList(french, true),
-            Language.Italian to MnemonicWordList(italian, false),
-            Language.Czech to MnemonicWordList(czech, false),
-            Language.Portuguese to MnemonicWordList(portuguese, false)
+        Language.English to MnemonicWordList(english),
+        Language.Japanese to MnemonicWordList(japanese),
+        Language.Korean to MnemonicWordList(korean),
+        Language.Spanish to MnemonicWordList(spanish),
+        Language.SimplifiedChinese to MnemonicWordList(simplifiedChinese),
+        Language.TraditionalChinese to MnemonicWordList(traditionalChinese),
+        Language.French to MnemonicWordList(french),
+        Language.Italian to MnemonicWordList(italian),
+        Language.Czech to MnemonicWordList(czech),
+        Language.Portuguese to MnemonicWordList(portuguese)
     )
 
     fun wordList(language: Language): MnemonicWordList = wordListsMap[language]

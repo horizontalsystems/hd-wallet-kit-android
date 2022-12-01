@@ -108,7 +108,7 @@ class Mnemonic {
         // used as a pseudo-random function. Desired length of the
         // derived key is 512 bits (= 64 bytes).
         //
-        val pass = mnemonicKeys.joinToString(separator = " ")
+        val pass = mnemonicKeys.joinToString(separator = " ") { MnemonicWordList.normalize(it) }
         val salt = "mnemonic$passphrase"
 
         return PBKDF2SHA512.derive(pass, salt, PBKDF2_ROUNDS, 64)
