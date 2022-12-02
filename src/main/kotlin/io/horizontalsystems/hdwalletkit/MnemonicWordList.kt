@@ -35,7 +35,9 @@ class MnemonicWordList(
     }
 
     companion object {
-        fun normalize(string: String): String = Normalizer.normalize(string, Normalizer.Form.NFKD)
+        fun normalize(string: String): String {
+                return Normalizer.normalize(string, Normalizer.Form.NFKD)
+        }
     }
 
     fun fetchSuggestions(input: String): List<String> {
