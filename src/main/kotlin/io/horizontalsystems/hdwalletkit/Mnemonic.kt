@@ -120,12 +120,13 @@ class Mnemonic {
      * requires deriving the original entropy, this function is the same as calling [toEntropy]
      */
     fun validate(mnemonicKeys: List<String>) {
-        var appropriateWordList  =  WordList.wordList(Language.English)
+        var appropriateWordList = WordList.wordList(Language.English)
 
         for (language in Language.values()) {
             val wordList = WordList.wordList(language)
             if (wordList.validWords(mnemonicKeys)) {
-                 appropriateWordList = wordList
+                appropriateWordList = wordList
+                break
             }
         }
 

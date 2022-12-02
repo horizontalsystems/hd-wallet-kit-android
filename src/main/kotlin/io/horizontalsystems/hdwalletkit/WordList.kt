@@ -15,6 +15,22 @@ object WordList {
             Language.Portuguese to MnemonicWordList(portuguese, false)
     )
 
+    private val wordListsStrictMap = mapOf(
+        Language.English to MnemonicWordList(english, false),
+        Language.Japanese to MnemonicWordList(japanese, false),
+        Language.Korean to MnemonicWordList(korean, false),
+        Language.Spanish to MnemonicWordList(spanish, false),
+        Language.SimplifiedChinese to MnemonicWordList(simplifiedChinese, false),
+        Language.TraditionalChinese to MnemonicWordList(traditionalChinese, false),
+        Language.French to MnemonicWordList(french, false),
+        Language.Italian to MnemonicWordList(italian, false),
+        Language.Czech to MnemonicWordList(czech, false),
+        Language.Portuguese to MnemonicWordList(portuguese, false)
+    )
+
+    fun wordListStrict(language: Language): MnemonicWordList = wordListsStrictMap[language]
+        ?: throw IllegalStateException("No MnemonicWordList found for language: ${language.name}")
+
     fun wordList(language: Language): MnemonicWordList = wordListsMap[language]
             ?: throw IllegalStateException("No MnemonicWordList found for language: ${language.name}")
 
