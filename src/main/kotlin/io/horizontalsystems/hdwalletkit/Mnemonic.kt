@@ -133,6 +133,20 @@ class Mnemonic {
         toEntropy(mnemonicKeys, appropriateWordList)
     }
 
+    fun validateStrict(mnemonicKeys: List<String>) {
+        var appropriateWordList = WordList.wordListStrict(Language.English)
+
+        for (language in Language.values()) {
+            val wordList = WordList.wordListStrict(language)
+            if (wordList.validWords(mnemonicKeys)) {
+                appropriateWordList = wordList
+                break
+            }
+        }
+
+        toEntropy(mnemonicKeys, appropriateWordList)
+    }
+
     fun isWordValid(word: String, partial: Boolean) = Language.values().any { language ->
         WordList.wordList(language).validWord(word, partial)
     }
