@@ -6,33 +6,62 @@ import java.math.BigInteger
 
 enum class HDExtendedKeyVersion(
     val value: Int,
-    val base58Prefix: String,
-    val purpose: Purpose,
-    val extendedKeyCoinType: ExtendedKeyCoinType = ExtendedKeyCoinType.Bitcoin,
-    val isPublic: Boolean = false
+    val base58Prefix: String
 ) {
 
     // bip44
-    xprv(0x0488ade4, "xprv", Purpose.BIP44),
-    xpub(0x0488b21e, "xpub", Purpose.BIP44, isPublic = true),
+    xprv(0x0488ade4, "xprv"),
+    xpub(0x0488b21e, "xpub"),
 
-    //bip49
-    yprv(0x049d7878, "yprv", Purpose.BIP49),
-    ypub(0x049d7cb2, "ypub", Purpose.BIP49, isPublic = true),
+    // bip49
+    yprv(0x049d7878, "yprv"),
+    ypub(0x049d7cb2, "ypub"),
 
-    //bip84
-    zprv(0x04b2430c, "zprv", Purpose.BIP84),
-    zpub(0x04b24746, "zpub", Purpose.BIP84, isPublic = true),
-
+    // bip84
+    zprv(0x04b2430c, "zprv"),
+    zpub(0x04b24746, "zpub"),
 
     // litecoin bip44
-    Ltpv(0x019d9cfe, "Ltpv", Purpose.BIP44, ExtendedKeyCoinType.Litecoin),
-    Ltub(0x019da462, "Ltub", Purpose.BIP44, ExtendedKeyCoinType.Litecoin, isPublic = true),
-
+    Ltpv(0x019d9cfe, "Ltpv"),
+    Ltub(0x019da462, "Ltub"),
 
     // litecoin bip49
-    Mtpv(0x01b26792, "Mtpv", Purpose.BIP49, ExtendedKeyCoinType.Litecoin),
-    Mtub(0x01b26ef6, "Mtub", Purpose.BIP49, ExtendedKeyCoinType.Litecoin, isPublic = true);
+    Mtpv(0x01b26792, "Mtpv"),
+    Mtub(0x01b26ef6, "Mtub");
+
+    val coinTypes: List<ExtendedKeyCoinType>
+        get() = when (this) {
+            xprv, xpub, zprv, zpub -> {
+                listOf(ExtendedKeyCoinType.Bitcoin, ExtendedKeyCoinType.Litecoin)
+            }
+
+            yprv, ypub -> {
+                listOf(ExtendedKeyCoinType.Bitcoin)
+            }
+
+            Ltpv, Ltub, Mtpv, Mtub -> {
+                listOf(ExtendedKeyCoinType.Litecoin)
+            }
+        }
+
+    val purposes: List<Purpose>
+        get() = when (this) {
+            xprv, xpub -> {
+                listOf(Purpose.BIP44, Purpose.BIP86)
+            }
+
+            Ltpv, Ltub -> {
+                listOf(Purpose.BIP44)
+            }
+
+            yprv, ypub, Mtpv, Mtub -> {
+                listOf(Purpose.BIP49)
+            }
+
+            zprv, zpub -> {
+                listOf(Purpose.BIP84)
+            }
+        }
 
     val pubKey: HDExtendedKeyVersion
         get() = when (this) {
@@ -48,6 +77,12 @@ enum class HDExtendedKeyVersion(
         get() = when (this) {
             xprv, yprv, zprv, Ltpv, Mtpv -> this
             xpub, ypub, zpub, Ltub, Mtub -> throw IllegalStateException("No privateKey of $base58Prefix")
+        }
+
+    val isPublic: Boolean
+        get() = when (this) {
+            xprv, yprv, zprv, Ltpv, Mtpv -> false
+            xpub, ypub, zpub, Ltub, Mtub -> true
         }
 
     companion object {
@@ -73,6 +108,10 @@ enum class HDExtendedKeyVersion(
 
                 Purpose.BIP84 -> {
                     if (isPrivate) zprv else zpub
+                }
+
+                Purpose.BIP86 -> {
+                    if (isPrivate) xprv else xpub
                 }
             }
         }

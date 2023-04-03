@@ -99,7 +99,7 @@ class HDWalletTest {
         val hdExtendedKey =
             HDExtendedKey("xprv9yvGv56N8NooX3S9CBmS9rwLLM3dgzyrB1pHp5aL6sYozkHptgvT7UbCTuyXF1HUAaPiG24iDBbnp7EQr8eSJkANf9EodqUiATBXrtAAHjj")
 
-        val hdWallet = HDWallet(hdExtendedKey.key, 0, hdExtendedKey.info.purpose)
+        val hdWallet = HDWallet(hdExtendedKey.key, 0, HDWallet.Purpose.BIP44)
 
         val privateKey = hdWallet.privateKey("0/0")
 
@@ -119,7 +119,7 @@ class HDWalletTest {
         val hdExtendedKey =
             HDExtendedKey("yprvABrGsX5C9jantLFKTZNpFi2c6RKLw87EhgjRLMzdbwp5NjLsUR1oC2kte6k5YXy9hsCSSBVUtJL5XKwF1oFrofumWE3rFKRx6drdQQpkcR4")
 
-        val hdWallet = HDWallet(hdExtendedKey.key, 0, hdExtendedKey.info.purpose)
+        val hdWallet = HDWallet(hdExtendedKey.key, 0, HDWallet.Purpose.BIP49)
         val privateKey = hdWallet.privateKey(0, 0, 0)
 
         assertEquals(
