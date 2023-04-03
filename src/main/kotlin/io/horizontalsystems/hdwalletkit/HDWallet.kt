@@ -29,7 +29,8 @@ class HDWallet(
     enum class Purpose(val value: Int) {
         BIP44(44),
         BIP49(49),
-        BIP84(84)
+        BIP84(84),
+        BIP86(86)
     }
 
     // m / purpose' / coin_type' / account' / change / address_index

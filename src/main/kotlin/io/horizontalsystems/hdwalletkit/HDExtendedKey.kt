@@ -13,7 +13,7 @@ class HDExtendedKey(
     constructor(seed: ByteArray, purpose: Purpose) : this(
         HDKeyDerivation.createRootKey(seed),
         when (purpose) {
-            Purpose.BIP44 -> HDExtendedKeyVersion.xprv
+            Purpose.BIP44, Purpose.BIP86 -> HDExtendedKeyVersion.xprv
             Purpose.BIP49 -> HDExtendedKeyVersion.yprv
             Purpose.BIP84 -> HDExtendedKeyVersion.zprv
         }
@@ -22,13 +22,14 @@ class HDExtendedKey(
     val derivedType: DerivedType
         get() = DerivedType.initFrom(key.depth)
 
-    val info: KeyInfo
-        get() = KeyInfo(
-            purpose = version.purpose,
-            coinType = version.extendedKeyCoinType,
-            derivedType = DerivedType.initFrom(key.depth),
-            isPublic = version.isPublic
-        )
+    val purposes: List<Purpose>
+        get() = version.purposes
+
+    val coinTypes: List<ExtendedKeyCoinType>
+        get() = version.coinTypes
+
+    val isPublic: Boolean
+        get() = version.isPublic
 
     fun serializePublic() = key.serializePublic(version.pubKey.value)
 
@@ -148,13 +149,6 @@ class HDExtendedKey(
                 }
         }
     }
-
-    data class KeyInfo(
-        val purpose: Purpose,
-        val coinType: ExtendedKeyCoinType,
-        val derivedType: DerivedType,
-        val isPublic: Boolean
-    )
 
     sealed class ParsingError : Throwable() {
         object WrongVersion : ParsingError()
