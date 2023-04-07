@@ -24,6 +24,8 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -142,6 +144,40 @@ public class Utils {
         byte[] out = new byte[64];
         hmac.doFinal(out, 0);
         return out;
+    }
+
+    /**
+     * Calculates the SHA-256 hash of the given byte range.
+     *
+     * @param input the array containing the bytes to hash
+     * @param offset the offset within the array of the bytes to hash
+     * @param length the number of bytes to hash
+     * @return the hash (in big-endian order)
+     */
+    public static byte[] sha256(byte[] input, int offset, int length) {
+        MessageDigest digest = newDigest();
+        digest.update(input, offset, length);
+        return digest.digest();
+    }
+
+    /**
+     * Calculates the SHA-256 hash of the given bytes.
+     *
+     * @param input the bytes to hash
+     * @return the hash (in big-endian order)
+     */
+    public static byte[] sha256(byte[] input) {
+        return sha256(input, 0, input.length);
+    }
+
+    public static byte[] taggedHash(String tag, byte[] msg) {
+        byte[] hash = sha256(tag.getBytes(StandardCharsets.UTF_8));
+        ByteBuffer buffer = ByteBuffer.allocate(hash.length + hash.length + msg.length);
+        buffer.put(hash);
+        buffer.put(hash);
+        buffer.put(msg);
+
+        return sha256(buffer.array());
     }
 
     /**
