@@ -33,6 +33,8 @@ import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -40,6 +42,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * ECKey supports elliptic curve cryptographic operations using a public/private
@@ -49,10 +52,16 @@ import java.util.Arrays;
  */
 public class ECKey {
 
-    /** Half-curve order for generating canonical S */
+    private static final X9ECParameters CURVE_PARAMS = CustomNamedCurves.getByName("secp256k1");
+
+    /**
+     * Half-curve order for generating canonical S
+     */
     public static final BigInteger HALF_CURVE_ORDER;
 
-    /** Elliptic curve parameters (secp256k1 curve) */
+    /**
+     * Elliptic curve parameters (secp256k1 curve)
+     */
     public static final ECDomainParameters ecParams;
     static {
         X9ECParameters params = CustomNamedCurves.getByName("secp256k1");
@@ -66,29 +75,16 @@ public class ECKey {
     /** Signed message header */
     private static final String BITCOIN_SIGNED_MESSAGE_HEADER = "Bitcoin Signed Message:\n";
 
-    /** Key label */
-    private String label = "";
+    protected final LazyECPoint pub;
 
-    /** Public key */
-    private byte[] pubKey;
-
-    /** Public key hash */
     private byte[] pubKeyHash;
 
-    /** P2SH-P2WPKH script hash */
-    private byte[] scriptHash;
+    private final BigInteger privKey;
 
-    /** Private key */
-    private BigInteger privKey;
-
-    /** Key creation time (seconds) */
+    /**
+     * Key creation time (seconds)
+     */
     private long creationTime;
-
-    /** Compressed public key */
-    private boolean isCompressed;
-
-    /** Change key */
-    private boolean isChange;
 
     /**
      * Creates an ECKey with a new public/private key pair.  Point compression is used
@@ -100,12 +96,11 @@ public class ECKey {
         ECKeyGenerationParameters keyGenParams = new ECKeyGenerationParameters(ecParams, secureRandom);
         keyGenerator.init(keyGenParams);
         AsymmetricCipherKeyPair keyPair = keyGenerator.generateKeyPair();
-        ECPrivateKeyParameters privKeyParams = (ECPrivateKeyParameters)keyPair.getPrivate();
-        ECPublicKeyParameters pubKeyParams = (ECPublicKeyParameters)keyPair.getPublic();
+        ECPrivateKeyParameters privKeyParams = (ECPrivateKeyParameters) keyPair.getPrivate();
+        ECPublicKeyParameters pubKeyParams = (ECPublicKeyParameters) keyPair.getPublic();
         privKey = privKeyParams.getD();
-        pubKey = pubKeyParams.getQ().getEncoded(true);
-        creationTime = System.currentTimeMillis()/1000;
-        isCompressed = true;
+        pub = new LazyECPoint(pubKeyParams.getQ(), true);
+        creationTime = System.currentTimeMillis() / 1000;
     }
 
     /**
@@ -114,7 +109,11 @@ public class ECKey {
      * @param       pubKey              Public key
      */
     public ECKey(byte[] pubKey) {
-        this(pubKey, null, false);
+        this(null, new LazyECPoint(ecParams.getCurve(), pubKey));
+    }
+
+    protected ECKey(BigInteger priv, ECPoint pub, boolean compressed) {
+        this(priv, new LazyECPoint(pub, compressed));
     }
 
     /**
@@ -141,11 +140,10 @@ public class ECKey {
     public ECKey(byte[] pubKey, BigInteger privKey, boolean compressed) {
         this.privKey = privKey;
         if (pubKey != null) {
-            this.pubKey = Arrays.copyOfRange(pubKey, 0, pubKey.length);
-            isCompressed = (pubKey.length==33);
+            this.pub = new LazyECPoint(ecParams.getCurve(), pubKey);
         } else if (privKey != null) {
-            this.pubKey = pubKeyFromPrivKey(privKey, compressed);
-            isCompressed = compressed;
+            byte[] pubKeyFromPrivKey = pubKeyFromPrivKey(privKey, compressed);
+            this.pub = new LazyECPoint(ecParams.getCurve(), pubKeyFromPrivKey);
         } else {
             throw new IllegalArgumentException("You must provide at least a private key or a public key");
         }
@@ -163,15 +161,24 @@ public class ECKey {
             return false;
         if (pubKeyBytes[0] == 0x04) {
             // Uncompressed pubkey
-            if (pubKeyBytes.length != 65)
-                return false;
+            return pubKeyBytes.length == 65;
         } else if (pubKeyBytes[0] == 0x02 || pubKeyBytes[0] == 0x03) {
             // Compressed pubkey
-            if (pubKeyBytes.length != 33)
-                return false;
+            return pubKeyBytes.length == 33;
         } else
             return false;
-        return true;
+    }
+
+    /**
+     * Returns true if the given pubkey is in its compressed form.
+     */
+    public static boolean isPubKeyCompressed(byte[] encoded) {
+        if (encoded.length == 32 || (encoded.length == 33 && (encoded[0] == 0x02 || encoded[0] == 0x03)))
+            return true;
+        else if (encoded.length == 65 && encoded[0] == 0x04)
+            return false;
+        else
+            throw new IllegalArgumentException(Hex.toHexString(encoded));
     }
 
     /**
@@ -256,42 +263,6 @@ public class ECKey {
     }
 
     /**
-     * Returns the key label
-     *
-     * @return      Key label
-     */
-    public String getLabel() {
-        return label;
-    }
-
-    /**
-     * Sets the key label
-     *
-     * @param       label               Key label
-     */
-    public void setLabel(String label) {
-        this.label = label;
-    }
-
-    /**
-     * Checks if this is a change key
-     *
-     * @return                          TRUE if this is a change key
-     */
-    public boolean isChange() {
-        return isChange;
-    }
-
-    /**
-     * Sets change key status
-     *
-     * @param       isChange            TRUE if this is a change key
-     */
-    public void setChange(boolean isChange) {
-        this.isChange = isChange;
-    }
-
-    /**
      * Returns the public key (as used in transaction scriptSigs).  A compressed
      * public key is 33 bytes and starts with '02' or '03' while an uncompressed
      * public key is 65 bytes and starts with '04'.
@@ -299,7 +270,18 @@ public class ECKey {
      * @return                          Public key
      */
     public byte[] getPubKey() {
-        return pubKey;
+        return pub.getEncoded();
+    }
+
+    /**
+     * Gets the x coordinate of the raw public key value. This appears in transaction scriptPubKeys for Taproot outputs.
+     */
+    public byte[] getPubKeyXCoord() {
+        return pub.getEncodedXCoord();
+    }
+
+    public ECPoint getPubKeyPoint() {
+        return pub.get();
     }
 
     /**
@@ -309,7 +291,7 @@ public class ECKey {
      */
     public byte[] getPubKeyHash() {
         if (pubKeyHash == null)
-            pubKeyHash = Utils.sha256Hash160(pubKey);
+            pubKeyHash = Utils.sha256Hash160(pub.getEncoded(true));
         return pubKeyHash;
     }
 
@@ -346,7 +328,7 @@ public class ECKey {
      * @return                          TRUE if the public key is compressed
      */
     public boolean isCompressed() {
-        return isCompressed;
+        return pub.isCompressed();
     }
 
     /**
@@ -425,7 +407,7 @@ public class ECKey {
             int recID = -1;
             for (int i=0; i<4; i++) {
                 ECKey k = recoverFromSignature(i, sig, e, isCompressed());
-                if (k != null && Arrays.equals(k.getPubKey(), pubKey)) {
+                if (k != null && Arrays.equals(k.getPubKey(), getPubKey())) {
                     recID = i;
                     break;
                 }
@@ -486,7 +468,7 @@ public class ECKey {
         try {
             ECDSASigner signer = new ECDSASigner();
             ECPublicKeyParameters params = new ECPublicKeyParameters(
-                    ecParams.getCurve().decodePoint(pubKey), ecParams);
+                    ecParams.getCurve().decodePoint(getPubKey()), ecParams);
             signer.init(false, params);
             isValid = signer.verifySignature(contentsHash, sig.getR(), sig.getS());
         } catch (RuntimeException exc) {
@@ -614,24 +596,110 @@ public class ECKey {
         return pubKeyPointFromPrivKey(privKey).getEncoded(compressed);
     }
 
-    /**
-     * Checks if two objects are equal
-     *
-     * @param       obj             The object to check
-     * @return                      TRUE if the object is equal
-     */
-    @Override
-    public boolean equals(Object obj) {
-        return (obj!=null && (obj instanceof ECKey) && Arrays.equals(pubKey, ((ECKey)obj).pubKey));
+    public static ECKey fromPublicOnly(ECPoint pub, boolean compressed) {
+        return new ECKey(null, pub, compressed);
+    }
+
+    public static ECKey fromPublicOnly(byte[] pub) {
+        return new ECKey(null, new LazyECPoint(ecParams.getCurve(), pub));
+    }
+
+    protected ECKey(@Nullable BigInteger priv, LazyECPoint pub) {
+        if (priv != null) {
+            if (priv.equals(BigInteger.ZERO) || priv.equals(BigInteger.ONE)) {
+                throw new IllegalArgumentException("Private key is illegal: " + priv);
+            }
+        }
+        if (pub == null) {
+            throw new IllegalArgumentException("Public key cannot be null");
+        }
+        this.privKey = priv;
+        this.pub = pub;
     }
 
     /**
-     * Returns the hash code for this object
+     * Creates an ECKey given the private key only. The public key is calculated from it (this is slow).
      *
-     * @return                      Hash code
+     * @param compressed Determines whether the resulting ECKey will use a compressed encoding for the public key.
      */
+    public static ECKey fromPrivate(BigInteger privKey, boolean compressed) {
+        ECPoint point = pubKeyPointFromPrivKey(privKey);
+        return new ECKey(privKey, new LazyECPoint(point, compressed));
+    }
+
+
+    public static ECKey fromPrivate(BigInteger privKey) {
+        return fromPrivate(privKey, true);
+    }
+
+    public static ECKey fromPrivate(byte[] privKeyBytes) {
+        return fromPrivate(new BigInteger(1, privKeyBytes), true);
+    }
+
+    public ECKey getTweakedOutputKey() {
+        TaprootPubKey taprootPubKey = liftX(getPubKeyXCoord());
+        ECPoint internalKey = taprootPubKey.ecPoint;
+        byte[] taggedHash = Utils.taggedHash("TapTweak", internalKey.getXCoord().getEncoded());
+        ECKey tweakValue = ECKey.fromPrivate(taggedHash);
+        ECPoint outputKey = internalKey.add(tweakValue.getPubKeyPoint());
+
+        if (hasPrivKey()) {
+            BigInteger taprootPriv = privKey;
+            BigInteger tweakedPrivKey = taprootPriv.add(tweakValue.getPrivKey()).mod(CURVE_PARAMS.getCurve().getOrder());
+            if (!ECKey.fromPrivate(tweakedPrivKey).getPubKeyPoint().equals(outputKey)) {
+                taprootPriv = CURVE_PARAMS.getCurve().getOrder().subtract(privKey);
+                tweakedPrivKey = taprootPriv.add(tweakValue.getPrivKey()).mod(CURVE_PARAMS.getCurve().getOrder());
+            }
+
+            return new ECKey(tweakedPrivKey, outputKey, true);
+        }
+
+        return ECKey.fromPublicOnly(outputKey, true);
+    }
+
+    private static TaprootPubKey liftX(byte[] bytes) {
+        SecP256K1Curve secP256K1Curve = (SecP256K1Curve) CURVE_PARAMS.getCurve();
+        BigInteger x = new BigInteger(1, bytes);
+        BigInteger p = secP256K1Curve.getQ();
+        if (x.compareTo(p) > -1) {
+            throw new IllegalArgumentException("Provided bytes must be less than secp256k1 field size");
+        }
+
+        BigInteger y_sq = x.modPow(BigInteger.valueOf(3), p).add(BigInteger.valueOf(7)).mod(p);
+        BigInteger y = y_sq.modPow(p.add(BigInteger.valueOf(1)).divide(BigInteger.valueOf(4)), p);
+        if (!y.modPow(BigInteger.valueOf(2), p).equals(y_sq)) {
+            throw new IllegalStateException("Calculated invalid y_sq when solving for y co-ordinate");
+        }
+
+        return y.and(BigInteger.ONE).equals(BigInteger.ZERO) ? new TaprootPubKey(secP256K1Curve.createPoint(x, y), false) : new TaprootPubKey(secP256K1Curve.createPoint(x, p.subtract(y)), true);
+    }
+
+    private static class TaprootPubKey {
+        public final ECPoint ecPoint;
+        public final boolean negated;
+
+        public TaprootPubKey(ECPoint ecPoint, boolean negated) {
+            this.ecPoint = ecPoint;
+            this.negated = negated;
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ECKey)) return false;
+        ECKey other = (ECKey) o;
+        return Objects.equals(this.privKey, other.privKey)
+                && Objects.equals(this.pub, other.pub);
+    }
+
     @Override
     public int hashCode() {
-        return Arrays.hashCode(pubKey);
+        return Objects.hash(privKey, pub);
+    }
+
+    @Override
+    public String toString() {
+        return pub.toString();
     }
 }
