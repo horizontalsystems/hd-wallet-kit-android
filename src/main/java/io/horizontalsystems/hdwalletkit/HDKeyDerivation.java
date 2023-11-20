@@ -34,7 +34,7 @@ public class HDKeyDerivation {
      * @return Root key
      * @throws HDDerivationException Generated master key is invalid
      */
-    public static HDKey createRootKey(byte[] seed) throws HDDerivationException {
+    public static HDKey createRootKey(byte[] seed, String beep32SeedSalt) throws HDDerivationException {
         if (seed.length < 16)
             throw new IllegalArgumentException("Seed must be at least 128 bits");
         //
@@ -45,7 +45,7 @@ public class HDKeyDerivation {
         // - Use parse256(IL) as master secret key, and IR as master chain code.
         //   In case IL is 0 or ≥n, the master key is invalid.
         //
-        byte[] i = Utils.hmacSha512("Bitcoin seed".getBytes(), seed);
+        byte[] i = Utils.hmacSha512(beep32SeedSalt.getBytes(), seed);
         byte[] il = Arrays.copyOfRange(i, 0, 32);
         byte[] ir = Arrays.copyOfRange(i, 32, 64);
         BigInteger privKey = new BigInteger(1, il);

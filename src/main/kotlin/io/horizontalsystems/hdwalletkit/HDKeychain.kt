@@ -3,7 +3,7 @@ package io.horizontalsystems.hdwalletkit
 
 class HDKeychain(private val hdKey: HDKey) {
 
-    constructor(seed: ByteArray): this(HDKeyDerivation.createRootKey(seed))
+    constructor(seed: ByteArray, beep32SeedSalt: String): this(HDKeyDerivation.createRootKey(seed, beep32SeedSalt))
 
     /// Parses the BIP32 path and derives the chain of keychains accordingly.
     /// Path syntax: (m?/)?([0-9]+'?(/[0-9]+'?)*)?
