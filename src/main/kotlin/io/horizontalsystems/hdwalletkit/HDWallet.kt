@@ -9,9 +9,10 @@ class HDWallet(
     constructor(
         seed: ByteArray,
         coinType: Int,
-        purpose: Purpose
+        purpose: Purpose,
+        beep32SeedSalt: String = "Bitcoin seed"
     ) : this(
-        HDKeychain(seed), coinType, purpose
+        HDKeychain(seed, beep32SeedSalt), coinType, purpose
     )
 
     constructor(
