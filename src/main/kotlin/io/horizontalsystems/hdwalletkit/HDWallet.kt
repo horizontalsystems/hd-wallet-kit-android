@@ -10,17 +10,18 @@ class HDWallet(
         seed: ByteArray,
         coinType: Int,
         purpose: Purpose,
-        beep32SeedSalt: String = "Bitcoin seed"
+        curve: Curve = Curve.Secp256K1
     ) : this(
-        HDKeychain(seed, beep32SeedSalt), coinType, purpose
+        HDKeychain(seed, curve), coinType, purpose
     )
 
     constructor(
         masterKey: HDKey,
         coinType: Int,
-        purpose: Purpose
+        purpose: Purpose,
+        curve: Curve = Curve.Secp256K1
     ) : this(
-        HDKeychain(masterKey), coinType, purpose
+        HDKeychain(masterKey, curve), coinType, purpose
     )
 
     enum class Chain {
@@ -33,6 +34,9 @@ class HDWallet(
         BIP84(84),
         BIP86(86)
     }
+
+    val masterKey: HDKey
+        get() = hdKeychain.hdKey
 
     // m / purpose' / coin_type' / account' / change / address_index
     //
@@ -71,6 +75,10 @@ class HDWallet(
 
     fun privateKey(account: Int, index: Int, chain: Int): HDKey {
         return privateKey(path = "m/$purpose'/$coinType'/$account'/$chain/$index")
+    }
+
+    fun privateKey(account: Int): HDKey {
+        return privateKey(path = "m/$purpose'/$coinType'/$account'")
     }
 
     fun privateKey(account: Int, index: Int, external: Boolean): HDKey {

@@ -3,9 +3,10 @@ package io.horizontalsystems.hdwalletkit
 import io.horizontalsystems.hdwalletkit.HDWallet.Chain
 
 class HDWalletAccountWatch(
-    accountPublicKey: HDKey
+    accountPublicKey: HDKey,
+    curve: Curve = Curve.Secp256K1
 ) {
-    private val hdKeychain: HDKeychain = HDKeychain(accountPublicKey)
+    private val hdKeychain: HDKeychain = HDKeychain(accountPublicKey, curve)
 
     fun publicKey(index: Int, chain: Chain): HDPublicKey {
         return HDPublicKey(hdKeychain.getKeyByPath("${chain.ordinal}/$index"))

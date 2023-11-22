@@ -34,7 +34,7 @@ public class HDKeyDerivation {
      * @return Root key
      * @throws HDDerivationException Generated master key is invalid
      */
-    public static HDKey createRootKey(byte[] seed, String beep32SeedSalt) throws HDDerivationException {
+    public static HDKey createRootKey(byte[] seed, Curve curve) throws HDDerivationException {
         if (seed.length < 16)
             throw new IllegalArgumentException("Seed must be at least 128 bits");
         //
@@ -45,7 +45,7 @@ public class HDKeyDerivation {
         // - Use parse256(IL) as master secret key, and IR as master chain code.
         //   In case IL is 0 or ≥n, the master key is invalid.
         //
-        byte[] i = Utils.hmacSha512(beep32SeedSalt.getBytes(), seed);
+        byte[] i = Utils.hmacSha512(curve.getBeep32SeedSalt().getBytes(), seed);
         byte[] il = Arrays.copyOfRange(i, 0, 32);
         byte[] ir = Arrays.copyOfRange(i, 32, 64);
         BigInteger privKey = new BigInteger(1, il);
@@ -74,8 +74,12 @@ public class HDKeyDerivation {
      * @return Derived key
      * @throws HDDerivationException Unable to derive key
      */
-    public static HDKey deriveChildKey(HDKey parent, int childNumber, boolean hardened)
+    public static HDKey deriveChildKey(HDKey parent, int childNumber, boolean hardened, Curve curve)
             throws HDDerivationException {
+        if (!hardened && !curve.getSupportNonHardened()) {
+            throw new CantDeriveNonHardened();
+        }
+
         HDKey derivedKey;
         if ((childNumber & HDKey.HARDENED_FLAG) != 0)
             throw new IllegalArgumentException("Hardened flag must not be set in child number");
@@ -84,7 +88,7 @@ public class HDKeyDerivation {
                 throw new IllegalStateException("Hardened key requires parent private key");
             derivedKey = derivePublicKey(parent, childNumber);
         } else {
-            derivedKey = derivePrivateKey(parent, childNumber, hardened);
+            derivedKey = derivePrivateKey(parent, childNumber, hardened, curve);
         }
         return derivedKey;
     }
@@ -98,7 +102,7 @@ public class HDKeyDerivation {
      * @return Derived key
      * @throws HDDerivationException Unable to derive key
      */
-    private static HDKey derivePrivateKey(HDKey parent, int childNumber, boolean hardened)
+    private static HDKey derivePrivateKey(HDKey parent, int childNumber, boolean hardened, Curve curve)
             throws HDDerivationException {
         byte[] parentPubKey = parent.getPubKey();
         if (parentPubKey.length != 33)
@@ -127,13 +131,8 @@ public class HDKeyDerivation {
         byte[] i = Utils.hmacSha512(parent.getChainCode(), dataBuffer.array());
         byte[] il = Arrays.copyOfRange(i, 0, 32);
         byte[] ir = Arrays.copyOfRange(i, 32, 64);
-        BigInteger ilInt = new BigInteger(1, il);
-        if (ilInt.compareTo(ECKey.ecParams.getN()) >= 0)
-            throw new HDDerivationException("Derived private key is not less than N");
-        BigInteger ki = parent.getPrivKey().add(ilInt).mod(ECKey.ecParams.getN());
-        if (ki.signum() == 0)
-            throw new HDDerivationException("Derived private key is zero");
-        return new HDKey(ki, ir, parent, parent.getFingerprint(), parent.getDepth() + 1, childNumber, hardened);
+        BigInteger privKey = curve.applyParameters(parent, il);
+        return new HDKey(privKey, ir, parent, parent.getFingerprint(), parent.getDepth() + 1, childNumber, hardened);
     }
 
     /**
