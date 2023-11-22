@@ -10,8 +10,8 @@ class HDExtendedKey(
 ) {
     constructor(serialized: String) : this(key(serialized), version(serialized))
 
-    constructor(seed: ByteArray, purpose: Purpose, beep32SeedSalt: String = "Bitcoin seed") : this(
-        HDKeyDerivation.createRootKey(seed, beep32SeedSalt),
+    constructor(seed: ByteArray, purpose: Purpose, curve: Curve = Curve.Secp256K1) : this(
+        HDKeyDerivation.createRootKey(seed, curve),
         when (purpose) {
             Purpose.BIP44, Purpose.BIP86 -> HDExtendedKeyVersion.xprv
             Purpose.BIP49 -> HDExtendedKeyVersion.yprv

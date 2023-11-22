@@ -1,9 +1,9 @@
 package io.horizontalsystems.hdwalletkit
 
 
-class HDKeychain(private val hdKey: HDKey) {
+class HDKeychain(val hdKey: HDKey, val curve: Curve = Curve.Secp256K1) {
 
-    constructor(seed: ByteArray, beep32SeedSalt: String): this(HDKeyDerivation.createRootKey(seed, beep32SeedSalt))
+    constructor(seed: ByteArray, curve: Curve): this(HDKeyDerivation.createRootKey(seed, curve), curve)
 
     /// Parses the BIP32 path and derives the chain of keychains accordingly.
     /// Path syntax: (m?/)?([0-9]+'?(/[0-9]+'?)*)?
@@ -42,7 +42,7 @@ class HDKeychain(private val hdKey: HDKey) {
                 indexText = indexText.dropLast(1)
             }
             val index = indexText.toInt()
-            key = HDKeyDerivation.deriveChildKey(key, index, hardened)
+            key = HDKeyDerivation.deriveChildKey(key, index, hardened, curve)
         }
 
         return key
@@ -51,7 +51,7 @@ class HDKeychain(private val hdKey: HDKey) {
     fun deriveNonHardenedChildKeys(parent: HDKey, indices: IntRange): List<HDKey> {
         val keys = mutableListOf<HDKey>()
         for (index in indices) {
-            val childHDKey = HDKeyDerivation.deriveChildKey(parent, index, false)
+            val childHDKey = HDKeyDerivation.deriveChildKey(parent, index, false, curve)
             keys.add(childHDKey)
         }
         return keys

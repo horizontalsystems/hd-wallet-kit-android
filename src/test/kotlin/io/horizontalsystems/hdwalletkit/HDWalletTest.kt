@@ -3,7 +3,7 @@ package io.horizontalsystems.hdwalletkit
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.util.*
+import java.util.Arrays
 
 class HDWalletTest {
 
@@ -11,6 +11,17 @@ class HDWalletTest {
         "6908630f564bd3ca9efb521e72da86727fc78285b15decedb44f40b02474502ed6844958b29465246a618b1b56b4bdffacd1de8b324159e0f7f594c611b0519d".hexStringToByteArray()
     private val hdWalletMainNet = HDWallet(seed, 0, HDWallet.Purpose.BIP44)
     private val hdWalletTestNet = HDWallet(seed, 1, HDWallet.Purpose.BIP44)
+
+    @Test
+    fun ed25519PrivKey() {
+        val hdWallet = HDWallet(seed, 607, HDWallet.Purpose.BIP44, Curve.Ed25519)
+        val privateKey = hdWallet.privateKey(0)
+
+        assertEquals(
+            "0b9fe06661fd41af89524e2df5b080580b9599560f6d4106f989ccfa579db412",
+            privateKey.privKeyBytes.toHexString()
+        )
+    }
 
     @Test
     fun receiveAddress_correctAddress_mainNet() {
