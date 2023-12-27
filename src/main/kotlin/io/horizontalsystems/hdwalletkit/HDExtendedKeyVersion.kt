@@ -110,7 +110,9 @@ enum class HDExtendedKeyVersion(
                     if (isPrivate) zprv else zpub
                 }
 
-                Purpose.BIP86 -> {
+                Purpose.BIP86,
+                Purpose.BIP45,
+                Purpose.BIP48 -> {
                     if (isPrivate) xprv else xpub
                 }
             }

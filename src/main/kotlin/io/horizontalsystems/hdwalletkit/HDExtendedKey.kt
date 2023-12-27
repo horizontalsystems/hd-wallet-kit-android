@@ -13,7 +13,10 @@ class HDExtendedKey(
     constructor(seed: ByteArray, purpose: Purpose, curve: Curve = Curve.Secp256K1) : this(
         HDKeyDerivation.createRootKey(seed, curve),
         when (purpose) {
-            Purpose.BIP44, Purpose.BIP86 -> HDExtendedKeyVersion.xprv
+            Purpose.BIP44,
+            Purpose.BIP86,
+            Purpose.BIP45,
+            Purpose.BIP48 -> HDExtendedKeyVersion.xprv
             Purpose.BIP49 -> HDExtendedKeyVersion.yprv
             Purpose.BIP84 -> HDExtendedKeyVersion.zprv
         }

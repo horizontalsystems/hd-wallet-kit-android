@@ -6,7 +6,7 @@ import org.junit.Test
 class HDKeychainTest {
 
     val seed = "6908630f564bd3ca9efb521e72da86727fc78285b15decedb44f40b02474502ed6844958b29465246a618b1b56b4bdffacd1de8b324159e0f7f594c611b0519d".hexStringToByteArray()
-    val hdKeyManager = HDKeychain(seed)
+    val hdKeyManager = HDKeychain(seed, Curve.Secp256K1)
 
     @Test
     fun getKeyByPath_Bip32() {

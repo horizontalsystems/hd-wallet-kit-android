@@ -32,7 +32,9 @@ class HDWallet(
         BIP44(44),
         BIP49(49),
         BIP84(84),
-        BIP86(86)
+        BIP86(86),
+        BIP45(45),
+        BIP48(48),
     }
 
     val masterKey: HDKey
